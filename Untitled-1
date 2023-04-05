@@ -1,0 +1,1 @@
+http://localhost:3000/quote?srcToken=0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE&destToken=0x6B175474E89094C44Da98b954EedeAC495271d0F&inputAmounts=1000000000000000000&part=50&slippage=5&address=0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1
