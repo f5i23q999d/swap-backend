@@ -1,17 +1,17 @@
 const express = require("express");
 const { ethers } = require("ethers");
 const app = express();
-const config = require("./config.js");
+const config = require("../config.js");
 const port = config.port;
 const provider = new ethers.providers.JsonRpcProvider(config.rpc);
 const wallet = new ethers.Wallet(
     "0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d",
     provider
 );
-const ERC20ABI = require("./ERC20.json");
+const ERC20ABI = require("../helpers/abi/ERC20.json");
 const ADAI_ADDRESS = "0x028171bCA77440897B824Ca71D1c56caC55b68A3";
-
-
+const axios = require('axios');
+const ADDRESS = require("../helpers/constant/addresses.js");
 async function test(){
     const ADAI = new ethers.Contract(ADAI_ADDRESS, ERC20ABI, wallet);
     console.log((await ADAI.balanceOf(wallet.address)).toString());
@@ -28,4 +28,119 @@ async function test(){
 }
 
 
-test()
+async function test2(){ //  1 ETH => USDT
+    // 先node start.js启动服务
+    
+    const result = await axios.get('http://127.0.0.1:3000/quote',{        
+            params: {
+                srcToken: ADDRESS.ETH,
+                destToken: ADDRESS.USDT,
+                inputAmounts: String(1e18),
+                part: 10,
+                slippage: 10,   // 1-500 ->0.1%->50%
+                address: ADDRESS.WALLET,
+                depth: 1
+            }          
+    });
+
+
+    const USDT = new ethers.Contract(ADDRESS.USDT, ERC20ABI, wallet);
+
+    const defaultAddress = wallet.address;
+	console.log('Before ETH balance:	', (await wallet.getBalance())/1e18);
+	console.log('Before USDT balance:	', (await USDT.balanceOf(defaultAddress))/1e6);
+
+    const tx = {
+        to : config.FXSWAP_ADDRESS,
+        data : result.data.txData,
+        gasLimit: "0xffffff",
+       value : ethers.utils.parseEther("1.0")
+    };    
+    console.log(await wallet.sendTransaction(tx));
+
+    
+
+
+    console.log('After ETH balance:	', (await wallet.getBalance())/1e18);
+	console.log('After USDT balance:	', (await USDT.balanceOf(defaultAddress))/1e6);
+
+    return;
+}
+
+
+async function test3(){ //  100 USDT => ETH
+    // 先node start.js启动服务
+
+    const result = await axios.get('http://127.0.0.1:3000/quote',{        
+            params: {
+                srcToken: ADDRESS.USDT,
+                destToken: ADDRESS.ETH,
+                inputAmounts: String(100e6),   // 100 USDT
+                part: 10,
+                slippage: 10,   // 1-500 ->0.1%->50%
+                address: ADDRESS.WALLET,
+                depth: 1
+            }          
+    });
+
+    const USDT = new ethers.Contract(ADDRESS.USDT, ERC20ABI, wallet);
+    const defaultAddress = wallet.address;
+	console.log('Before ETH balance:	', (await wallet.getBalance())/1e18);
+	console.log('Before USDT balance:	', (await USDT.balanceOf(defaultAddress))/1e6);
+
+    await USDT.approve(config.FXSWAP_ADDRESS, String(100e6));
+    const tx = {
+        to : config.FXSWAP_ADDRESS,
+        data : result.data.txData,    
+    };    
+    console.log(await wallet.sendTransaction(tx));    
+
+
+    console.log('After ETH balance:	', (await wallet.getBalance())/1e18);
+	console.log('After USDT balance:	', (await USDT.balanceOf(defaultAddress))/1e6);
+
+    return;
+}
+
+
+async function test4(){ //  1 USDT => DAI
+    // 先node start.js启动服务
+
+    const result = await axios.get('http://127.0.0.1:3000/quote',{        
+            params: {
+                srcToken: ADDRESS.USDT,
+                destToken: ADDRESS.DAI,
+                inputAmounts: String(100e6),   // 100 USDT
+                part: 10,
+                slippage: 10,   // 1-500 ->0.1%->50%
+                address: ADDRESS.WALLET,
+                depth: 1
+            }          
+    });
+
+    const USDT = new ethers.Contract(ADDRESS.USDT, ERC20ABI, wallet);
+    const DAI = new ethers.Contract(ADDRESS.DAI, ERC20ABI, wallet);
+    const defaultAddress = wallet.address;
+	console.log('Before DAI balance:	', (await DAI.balanceOf(defaultAddress))/1e18);
+	console.log('Before USDT balance:	', (await USDT.balanceOf(defaultAddress))/1e6);
+
+    await USDT.approve(config.FXSWAP_ADDRESS, String(0));  // 重置授权
+    await USDT.approve(config.FXSWAP_ADDRESS, String(100e6));
+    const tx = {
+        to : config.FXSWAP_ADDRESS,
+        data : result.data.txData,    
+    };    
+    console.log(await wallet.sendTransaction(tx));    
+
+
+	console.log('After DAI balance:	', (await DAI.balanceOf(defaultAddress))/1e18);
+	console.log('After USDT balance:	', (await USDT.balanceOf(defaultAddress))/1e6);
+
+    return;
+}
+
+
+
+// test2()
+// test3()
+test4()

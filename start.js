@@ -1,107 +1,28 @@
-const express = require('express');
+const express = require("express");
 const { ethers } = require("ethers");
 const app = express();
-const config = require('./config.js');
+const config = require("./config.js");
 const port = config.port;
 const provider = new ethers.providers.JsonRpcProvider(config.rpc);
-const wallet = new ethers.Wallet("0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d", provider);
+const wallet = new ethers.Wallet(
+    config.privateKey,
+    provider
+);
 const signer = provider.getSigner(wallet.address);
-const IAToken = require('./IAToken.json');
-const IERC20 = require('./IERC20.json');
-const ERC20ABI = require('./ERC20.json');
-const AAVEPOOLV2ABI = require('./aavev2.json');
-const UniswapV2Factory = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
-const ShibaswapFactory = "0x115934131916C8b277DD010Ee02de363c09d037c";
-const SushiswapFactory = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac";
-const IUniswapV2Factory = require('./IUniswapV2Factory.json');
-const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-const USDT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
-const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
-const DAI_ADDRESS = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
-const ONEINCH_ADDRESS = "0x111111111117dC0aa78b770fA6A738034120C302";
-const UNI_ADDRESS = "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984";
-const UNISWAP_ROUTER = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
-const SUSHI_ROUTER = "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F";
-const AAVEPOOLV2_ADDRESS = "0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9";
-const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
-const ADAI_ADDRESS = "0x028171bCA77440897B824Ca71D1c56caC55b68A3";
-const AUSDC_ADDRESS = "0xBcca60bB61934080951369a648Fb03DF4F96263C";
-const FXSWAPABI = require('./fxswap.json');
-const FXSWAP_ADDRESS = config.FXSWAP_ADDRESS;
-const aaveTokenList = [
-    "0xFFC97d72E13E01096502Cb8Eb52dEe56f74DAD7B",
-    "0x05Ec93c0365baAeAbF7AefFb0972ea7ECdD39CF1",
-    "0xA361718326c15715591c299427c62086F69923D9",
-    "0x028171bCA77440897B824Ca71D1c56caC55b68A3",
-    "0xaC6Df26a590F08dcC95D5a4705ae8abbc88509Ef",
-    "0x39C6b3e42d6A679d7D776778Fe880BC9487C2EDA",
-    "0xa06bC25B5805d5F8d82847D191Cb4Af5A3e873E0",
-    "0xa685a61171bb30d4072B338c80Cb7b2c865c873E",
-    "0xc713e5E149D5D0715DcD1c156a020976e7E56B88",
-    "0x35f6B052C598d933D69A4EEC4D04c73A191fE6c2",
-    "0x6C5024Cd4F8A59110119C56f8933403A539555EB",
-    "0xB9D7CB55f463405CDfBe4E90a6D2Df01C2B92BF1",
-    "0xBcca60bB61934080951369a648Fb03DF4F96263C",
-    "0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811",
-    "0x9ff58f4fFB29fA2266Ab25e75e2A8b3503311656",
-    "0x030bA81f1c18d280636F32af80b9AAd02Cf0854e",
-    "0xDf7FF54aAcAcbFf42dfe29DD6144A69b629f8C9e"
-];
+const MAX_INT = "115792089237316195423570985008687907853269984665640564039457584007913129639934";
+const BigNumber = require("bignumber.js");
+const ADDRESS = require("./helpers/constant/addresses.js");
 
+const FXSWAPABI = require("./helpers/abi/fxswap.json");
+const Aavehelper = require("./helpers/aavehelper.js");
+const Uniswapv3helper = require("./helpers/uniswapv3helper.js");
+const Uniswapv2helper = require("./helpers/uniswapv2helper.js");
+const Dodohelper = require("./helpers/dodohelper.js");
+const Util = require("./helpers/utils/util.js");
 
-class uniswapv2helper {
+const uniswapv3_fee = 3000;
 
-    async getEstimatedToken1forExactToken2(token1, token2, amountIn, router, part) {
-
-        const contract = new ethers.Contract(router, IUniswapV2Factory, signer);
-
-        if (token1 === ETH_ADDRESS) {
-            token1 = WETH_ADDRESS
-        }
-        if (token2 === ETH_ADDRESS) {
-            token2 = WETH_ADDRESS
-        }
-
-        const pool = await contract.getPair(token1, token2);
-        //console.log(pool);
-        if (pool === "0x0000000000000000000000000000000000000000") {
-            return {price:0,youGet:0,distribution:new Array(Number(part) + 1).fill(0)};
-        }
-        const token1Contract = new ethers.Contract(token1, IERC20, signer);
-        const token2Contract = new ethers.Contract(token2, IERC20, signer);
-        const token1Balance = await token1Contract.balanceOf(pool);
-        const token2Balance = await token2Contract.balanceOf(pool);
-
-        const res = [];
-        for (let i = 0; i <= part; i++) {
-            const amountIn_part = amountIn * i / part;
-            res.push(amountIn_part * token2Balance * 997 / (token1Balance * 1000 + amountIn_part * 997));
-        }
-        const price = amountIn * token2Balance * 997 / ((token1Balance * 1000 + amountIn * 997) * amountIn);
-        const youGet = amountIn * token2Balance * 997 / (token1Balance * 1000 + amountIn * 997);
-        //console.log(res);
-        return { price, youGet, distribution: res };
-    }
-
-}
-
-class aavehelper {
-    async getEstimatedToken1forExactToken2(token1, token2, amountIn, router, part) {
-        if (token1 === ADAI_ADDRESS || token2 === ADAI_ADDRESS) {
-            const res = new Array(part + 1).fill(0);
-            //res[part] = amountIn;
-            for (let i = 0; i <= part; i++) {
-                res[i] = amountIn * i / part;
-            }
-            return res;
-        }
-        return new Array(part + 1).fill(0);
-    }
-
-}
-
-
-function findBestDistribution(s, amounts) {
+function findBestDistributionWithBigNumber(s, amounts) {
     const n = amounts.length;
 
     const answer = new Array(n);
@@ -115,7 +36,7 @@ function findBestDistribution(s, amounts) {
     for (let j = 0; j <= s; j++) {
         answer[0][j] = amounts[0][j];
         for (let i = 1; i < n; i++) {
-            answer[i][j] = -1e72;
+            answer[i][j] = new BigNumber(-1e72);
         }
         parent[0][j] = 0;
     }
@@ -126,8 +47,8 @@ function findBestDistribution(s, amounts) {
             parent[i][j] = j;
 
             for (let k = 1; k <= j; k++) {
-                if (answer[i - 1][j - k] + amounts[i][k] > answer[i][j]) {
-                    answer[i][j] = answer[i - 1][j - k] + amounts[i][k];
+                if (answer[i - 1][j - k].plus(amounts[i][k]).comparedTo(answer[i][j])==1) {
+                    answer[i][j] = answer[i - 1][j - k].plus(amounts[i][k]);
                     parent[i][j] = j - k;
                 }
             }
@@ -141,53 +62,250 @@ function findBestDistribution(s, amounts) {
         distribution[curExchange] = partsLeft - parent[curExchange][partsLeft];
         partsLeft = parent[curExchange][partsLeft];
     }
-    const returnAmount = (answer[n - 1][s] == -1e72) ? 0 : answer[n - 1][s];
+    const returnAmount = answer[n - 1][s] == new BigNumber(-1e72) ? 0 : answer[n - 1][s];
 
     return { returnAmount, distribution };
 }
 
+async function getDisplayInformation(srcToken,destToken,inputAmounts,returnAmount){
+    // 返回给前端的显示信息
+    if (srcToken === ADDRESS.ETH) {
+        srcToken = ADDRESS.WETH;
+    }
 
-async function routerPath(srcToken, destToken, inputAmounts, part) {
-    const paths = [];
-    const originalSrcToken = srcToken;
-    if (aaveTokenList.includes(srcToken)) {
-        const contract = new ethers.Contract(srcToken, IAToken, signer);
-        const address = await contract.UNDERLYING_ASSET_ADDRESS();
-        paths.push([srcToken, address, inputAmounts, [0, 0, 0, 1], 1]);
-        srcToken = address;
-    }
-    let tmp = destToken;
-    if (aaveTokenList.includes(destToken)) {
-        const contract = new ethers.Contract(destToken, IAToken, signer);
-        destToken = await contract.UNDERLYING_ASSET_ADDRESS();
-    }
-    let u = new uniswapv2helper();
-    const promises = [
-        u.getEstimatedToken1forExactToken2(srcToken, destToken, inputAmounts, SushiswapFactory, part),
-        u.getEstimatedToken1forExactToken2(srcToken, destToken, inputAmounts, ShibaswapFactory, part),
-        u.getEstimatedToken1forExactToken2(srcToken, destToken, inputAmounts, UniswapV2Factory, part)
+    const outputDecimals = destToken === ADDRESS.ETH?18:await Util.getDecimals(destToken, signer);
+
+    const display = [
+        { name: "FxSwap", price: returnAmount/inputAmounts, youGet: returnAmount/Math.pow(10,outputDecimals), fees: 8.88 }
     ];
+    const queries = [];
+    const UniswapV2Factories = [ADDRESS.SushiswapFactory,ADDRESS.ShibaswapFactory,ADDRESS.UniswapV2Factory];  // 都是基于uni的v2协议 
+    let uniswapv2helper = new Uniswapv2helper();
+    for(let i = 0; i < UniswapV2Factories.length; i++){
+        queries.push(uniswapv2helper.getOutputByExactInput(
+            srcToken,
+            destToken,
+            inputAmounts,
+            UniswapV2Factories[i],
+            1,
+            signer
+        ).catch((e) => {return Promise.resolve("noResult");}))
+    }
 
-    const [res1, res2, res3] = await Promise.all(promises);
+    const uniswapv3helper = new Uniswapv3helper();
+    queries.push(uniswapv3helper.getOutputByExactInput(srcToken,destToken,inputAmounts,uniswapv3_fee,ADDRESS.V3QUOTE_V2,1,signer).catch((e) => {return Promise.resolve("noResult");}));
+
+    const aavehelper = new Aavehelper();
+    queries.push(aavehelper.getOutputByExactInput(srcToken,destToken,inputAmounts,ADDRESS.AAVEPOOLV2,1,signer).catch((e) => {return Promise.resolve("noResult");}));
+
+    const dodohelper = new Dodohelper();
+    queries.push(dodohelper.getOutputByExactInput(srcToken,destToken,inputAmounts,null,1,signer).catch((e) => {return Promise.resolve("noResult");}));
 
     let matrix = [];
-    matrix.push(res1.distribution);
-    matrix.push(res2.distribution);
-    matrix.push(res3.distribution);
-    let zero = new Array(part + 1).fill(0);
-    matrix.push(zero);
+    const partResults = await Promise.all(queries);
+    for(let i = 0; i < partResults.length; i++){
+        if(partResults[i] === "noResult"){
+            matrix.push([0,0]);
+        }else{
+            matrix.push(partResults[i]);
+        }
 
-    let { returnAmount, distribution } = findBestDistribution(part, matrix);
-    console.log(returnAmount, distribution);
-    paths.push([srcToken, destToken, 0, distribution, 0]);
-
-    destToken = tmp;
-    if (aaveTokenList.includes(destToken)) {
-        const contract = new ethers.Contract(destToken, IAToken, signer);
-        const address = await contract.UNDERLYING_ASSET_ADDRESS();
-        paths.push([address, destToken, 0, [0, 0, 0, 1], 2]);
     }
 
+    const name_string = ["Sushiswap","Shibaswap","UniswapV2","UniswapV3","AaveV2","Dodo"];
+    for(let i = 0; i<name_string.length; i++){
+        display.push({name: name_string[i],price: matrix[i][1]/inputAmounts,youGet: matrix[i][1]/Math.pow(10,outputDecimals),fees: 8.88 });
+    }
+
+    return display;
+
+
+}
+
+async function buildTrades(paths){
+    // 路由具体逻辑的构造
+    const abiEncoder = new ethers.utils.AbiCoder();
+    const trades = [];
+    for(let i = 0; i < paths.length; i++){
+        const sourceToken = paths[i][0];
+        const destinationToken = paths[i][1];
+        const amount = 0;//paths[i][2];  amount全为0，仅根据distribution来获得
+        const path = paths[i];
+        const _distribution = paths[i][3];
+        const distribution = [];
+        const orders = [];
+        if(_distribution[0]>0){ // sushiswap
+            distribution.push(_distribution[0]);
+            const encodedPayload = abiEncoder.encode(["address","address","address","uint256","uint256","uint256"],
+			    [ADDRESS.SUSHI_ROUTER, sourceToken, destinationToken, amount,MAX_INT,0]
+	    	) 
+            orders.push(
+                {
+                    "exchangeHandler" : config.uniswapV2Handler_ADDRESS, // orders经由部署 UniswapV2Handler合约进行处理
+                    "encodedPayload" : encodedPayload
+                }
+            )
+        }
+        if(_distribution[1]>0){ // shibaswap
+            distribution.push(_distribution[1]);
+            const encodedPayload = abiEncoder.encode(["address","address","address","uint256","uint256","uint256"],
+			    [ADDRESS.SHIBA_ROUTER, sourceToken, destinationToken, amount,MAX_INT,0]
+	    	) 
+            orders.push(
+                {
+                    "exchangeHandler" : config.uniswapV2Handler_ADDRESS, // orders经由部署 UniswapV2Handler合约进行处理
+                    "encodedPayload" : encodedPayload
+                }
+            )
+        }
+        if(_distribution[2]>0){ // uniswapv2
+            distribution.push(_distribution[2]);
+            const encodedPayload = abiEncoder.encode(["address","address","address","uint256","uint256","uint256"],
+			    [ADDRESS.UNISWAP_ROUTER, sourceToken, destinationToken, amount,MAX_INT,0]
+	    	) 
+            orders.push(
+                {
+                    "exchangeHandler" : config.uniswapV2Handler_ADDRESS, // orders经由部署 UniswapV2Handler合约进行处理
+                    "encodedPayload" : encodedPayload
+                }
+            )
+        }
+        if(_distribution[3]>0){ // uniswapv3
+            distribution.push(_distribution[3]);
+            const encodedPayload = abiEncoder.encode(["address","address","address","uint256","uint256","uint256","uint24","uint160"],
+                [ADDRESS.UNISWAPV3_ROUTER, sourceToken, destinationToken, amount,MAX_INT,0,uniswapv3_fee,0]  // 默认0.3%手续费
+            ) 
+            orders.push(
+                {
+                    "exchangeHandler" : config.uniswapV3Handler_ADDRESS, // orders经由部署 UniswapV3Handler合约进行处理
+                    "encodedPayload" : encodedPayload
+                }
+            )
+        }
+        if(_distribution[4]>0){ // aave
+            distribution.push(_distribution[4]);
+            const encodedPayload = abiEncoder.encode(["address","address","uint256","uint256"],
+            [sourceToken, destinationToken,amount, aaveTokenList.includes(sourceToken) ? 1: 2] 
+            ) 
+            orders.push(
+                {
+                    "exchangeHandler" : config.aaveV2Handler_ADDRESS, // orders经由部署 aaveV2Handler合约进行处理
+                    "encodedPayload" : encodedPayload
+                }
+            )
+        }
+        if(_distribution[5]>0){ // dodo
+            distribution.push(_distribution[5]);
+            const dodohelper = new Dodohelper();
+            const {pool,token1IsBase,version} = await dodohelper.tokenInfo(sourceToken,destinationToken,signer);
+            const encodedPayload = abiEncoder.encode(["address","address","address","uint256","uint256","bool","address"],
+            [sourceToken, destinationToken, pool, amount,version,token1IsBase,ADDRESS.DODO_HELPER]
+        )
+            orders.push(
+                {
+                    "exchangeHandler" : config.dodoHandler_ADDRESS, // orders经由部署 aaveV2Handler合约进行处理
+                    "encodedPayload" : encodedPayload
+                }
+            )
+        }
+        const trade = {
+            sourceToken,
+            destinationToken,
+            amount,
+            distribution,
+            orders
+        };
+        trades.push(trade);
+    }
+
+    return trades;
+
+}
+
+async function routerPath1(srcToken, destToken, inputAmounts, part) {
+    const paths = [];
+
+    // 先做第一层转换，例如aave和compound, 都是Defi的token与对应token的转换
+    const aavehelper = new Aavehelper();
+    if (aavehelper.isAToken(srcToken)) {
+        const UNDERLYING_ASSET_ADDRESS = aavehelper.getUnderlyingToken(srcToken);
+        paths.push([srcToken, UNDERLYING_ASSET_ADDRESS, inputAmounts, [0, 0, 0, 0, 1, 0], 1]); // 最后的1代表deposit
+        srcToken = UNDERLYING_ASSET_ADDRESS;
+    }
+    // if (compoundTokenList.includes(srcToken))  如果源token是ctoken
+    inputAmounts = inputAmounts; //第一层转换后更新inputAmounts
+
+    let tmp = destToken;
+    // 最后一层转换
+    if (aavehelper.isAToken(destToken)) {
+        destToken = aavehelper.getUnderlyingToken(destToken);
+    }
+    // if (compoundTokenList.includes(destToken))  如果目标token是ctoken
+    
+    const queries = [];
+    const UniswapV2Factories = [ADDRESS.SushiswapFactory,ADDRESS.ShibaswapFactory,ADDRESS.UniswapV2Factory];  // 都是基于uni的v2协议 
+    let uniswapv2helper = new Uniswapv2helper();
+    for(let i = 0; i < UniswapV2Factories.length; i++){
+        queries.push(uniswapv2helper.getOutputByExactInput(
+            srcToken,
+            destToken,
+            inputAmounts,
+            UniswapV2Factories[i],
+            part,
+            signer
+        ))
+    }
+
+    const uniswapv3helper = new Uniswapv3helper();
+    queries.push(uniswapv3helper.getOutputByExactInput(srcToken,destToken,inputAmounts,uniswapv3_fee,ADDRESS.V3QUOTE_V2,part,signer));
+
+    
+    queries.push(aavehelper.getOutputByExactInput(srcToken,destToken,inputAmounts,ADDRESS.AAVEPOOLV2,part,signer));
+    
+    const dodohelper = new Dodohelper();
+    queries.push(dodohelper.getOutputByExactInput(srcToken,destToken,inputAmounts,null,part,signer));
+    
+    // matrix矩阵保存每个swap进行part划分后计算得到的金额结果，例如 
+    /*
+        [
+            [0,1,2,3],
+            [0,2,4,6],
+            [0,3,6,9],
+            [0,4,8,12]
+        ]
+        这是part=3的情形，第一行的0代表输入金额为0时，输出的数量， 第一行的1代表输入金额为总的1/3时输出的数量，第一行的2代表输入金额为总的2/3时输出的数量,以此类推
+    */
+    let matrix = [];  
+
+    const partResults = await Promise.all(queries);
+    for(let i = 0; i < partResults.length; i++){
+        matrix.push(partResults[i]);
+    }
+
+    // 计算最优路径
+    let { returnAmount, distribution } = findBestDistributionWithBigNumber(part, matrix);
+
+    // 归一化distribution数组
+    let distribution_count = 0;
+    for(let i = 0; i < distribution.length; i++){
+        distribution_count += distribution[i];
+    }
+    for(let i = 0; i < distribution.length; i++){
+        distribution[i] = Math.round(distribution[i]/distribution_count*100);
+    }
+    
+    console.log(returnAmount, distribution);
+    paths.push([srcToken, destToken, 0, distribution, 0]);  // 添加路径
+
+
+    // 特殊token的转换，例如aave和compound
+    destToken = tmp;
+    if (aavehelper.isAToken(destToken)) {
+        const address = aavehelper.getUnderlyingToken(destToken);
+        paths.push([address, destToken, 0, [0, 0, 0, 0, 1,0], 2]);
+    }
+
+    // 过滤掉相同的token路径
     const res = [];
     for (let i = 0; i < paths.length; i++) {
         if (paths[i][0] !== paths[i][1]) {
@@ -195,82 +313,218 @@ async function routerPath(srcToken, destToken, inputAmounts, part) {
         }
     }
 
-    const display = [
-        { name: "FxSwap", price: returnAmount/inputAmounts, youGet: returnAmount }
-    ];
-    if (aaveTokenList.includes(originalSrcToken) || aaveTokenList.includes(destToken)) {
-        const promises = [
-            u.getEstimatedToken1forExactToken2(originalSrcToken, destToken, inputAmounts, SushiswapFactory, part),
-            u.getEstimatedToken1forExactToken2(originalSrcToken, destToken, inputAmounts, ShibaswapFactory, part),
-            u.getEstimatedToken1forExactToken2(originalSrcToken, destToken, inputAmounts, UniswapV2Factory, part)
-        ];
-        const [res1, res2, res3] = await Promise.all(promises);
-        display.push({ name: "Sushiswap", price: res1.price, youGet: res1.youGet });
-        display.push({ name: "Shibaswap", price: res2.price, youGet: res2.youGet });
-        display.push({ name: "Uniswap", price: res3.price, youGet: res3.youGet });
-        return {res,display};
-    } else {
-        const display =[{ name: "FxSwap", price: returnAmount/inputAmounts, youGet: returnAmount },
-        { name: "Sushiswap", price: res1.price, youGet: res1.youGet },
-        { name: "Shibaswap", price: res2.price, youGet: res2.youGet },
-        { name: "Uniswap", price: res3.price, youGet: res3.youGet }];
-        return {res,display};
-    }
-
-
+    // returnAmount 代表中间swap时返回的数量
+    // distribution 代表中间swap时的分配比例 
+    // paths 代表最终的路径
+    return {returnAmount, distribution, paths: res};
 }
 
 
-app.get('/', (req, res) => {
-    res.send('Hello FxSwap!')
-})
+async function routerPath2(srcToken, destToken, inputAmounts, part) {
+    const paths = [];
 
-app.get('/quote', async (req, res) => {
-    const srcToken = req.query.srcToken;
-    const destToken = req.query.destToken;
-    const inputAmounts = req.query.inputAmounts;
-    const part = req.query.part;
-    const slippage = req.query.slippage;
-    const address = req.query.address;
+    // 先做第一层转换，例如aave和compound, 都是Defi的token与对应token的转换
+    const aavehelper = new Aavehelper();
+    if (aavehelper.isAToken(srcToken)) {
+        const UNDERLYING_ASSET_ADDRESS = aavehelper.getUnderlyingToken(srcToken);
+        paths.push([srcToken, UNDERLYING_ASSET_ADDRESS, inputAmounts, [0, 0, 0, 0, 1, 0], 1]); // 最后的1代表deposit
+        srcToken = UNDERLYING_ASSET_ADDRESS;
+    }
+    // if (compoundTokenList.includes(srcToken))  如果源token是ctoken
+    inputAmounts = inputAmounts; //第一层转换后更新inputAmounts
+
+    let tmp = destToken;
+    // 最后一层转换
+    if (aavehelper.isAToken(destToken)) {
+        destToken = aavehelper.getUnderlyingToken(destToken);
+    }
+    // if (compoundTokenList.includes(destToken))  如果目标token是ctoken
     
-    let details = await routerPath(srcToken, destToken, inputAmounts, part);
-    // uniswap 类型 gas 费100000
-    const uniswapGas = 150000;
-    const gasPrice = await provider.getGasPrice();
-    const ETHprice = 2000;// 假设2000usd
-    const uniFee = uniswapGas * gasPrice * ETHprice / 1e18;
 
-    const mininumOut = BigInt(Math.floor(details.display[0].youGet * (1000-slippage) * 0.001)).toString();
+    const tmpDestToken = destToken;// 用来临时保存目标token
+    const tmpInputAmounts = inputAmounts; // 用来临时保存输入金额
 
-    let iface = new ethers.utils.Interface(FXSWAPABI);
-    const data = iface.encodeFunctionData("swap", [srcToken, destToken, inputAmounts, mininumOut, details.res]);
-    details.data = data;
-    const user = provider.getSigner(address);
-    const FXSWAP = new ethers.Contract(FXSWAP_ADDRESS, FXSWAPABI,user);
-    let estimatedGas = 0;
-    try{
-        if (srcToken == ETH_ADDRESS) {
-            estimatedGas = await FXSWAP.estimateGas.swap(srcToken,destToken,inputAmounts,mininumOut,details.res,{value:inputAmounts});
-        } else {
-            estimatedGas = await FXSWAP.estimateGas.swap(srcToken,destToken,inputAmounts,mininumOut,details.res);
+    const middleToken = [ADDRESS.WETH,ADDRESS.USDT]; 
+    let maxReturnAmount = new BigNumber(0);
+    let distribution= null;
+    let path1 = null;
+    let path2 = null;
+    paths.push([]);
+    paths.push([]);
+    for(const middle of middleToken){
+        const queries = [];
+        const UniswapV2Factories = [ADDRESS.SushiswapFactory,ADDRESS.ShibaswapFactory,ADDRESS.UniswapV2Factory];  // 都是基于uni的v2协议 
+        let uniswapv2helper = new Uniswapv2helper();
+        for(let i = 0; i < UniswapV2Factories.length; i++){
+            queries.push(uniswapv2helper.getOutputByExactInput(
+                srcToken,
+                middle,
+                inputAmounts,
+                UniswapV2Factories[i],
+                part,
+                signer
+            ))
         }
-    } catch (err){
-        // 无法估计
+    
+        const uniswapv3helper = new Uniswapv3helper();
+        queries.push(uniswapv3helper.getOutputByExactInput(srcToken,middle,inputAmounts,uniswapv3_fee,ADDRESS.V3QUOTE_V2,part,signer));
+    
+        
+        queries.push(aavehelper.getOutputByExactInput(srcToken,middle,inputAmounts,ADDRESS.AAVEPOOLV2,part,signer));
+        
+        const dodohelper = new Dodohelper();
+        queries.push(dodohelper.getOutputByExactInput(srcToken,middle,inputAmounts,null,part,signer));
+        
+        let matrix = [];  
+    
+        const partResults = await Promise.all(queries);
+        for(let i = 0; i < partResults.length; i++){
+            matrix.push(partResults[i]);
+        }
+    
+
+        let res = findBestDistributionWithBigNumber(part, matrix);
+        distribution = res.distribution;
+        // 归一化distribution数组
+        let distribution_count = 0;
+        for(let i = 0; i < distribution.length; i++){
+            distribution_count += distribution[i];
+        }
+        for(let i = 0; i < distribution.length; i++){
+            distribution[i] = Math.round(distribution[i]/distribution_count*100);
+        }        
+        path1 = [srcToken, middle, 0, distribution, 0];  // 添加路径
+
+        inputAmounts = res.returnAmount.toString();
+
+
+
+        const queries2 = [];
+        for(let i = 0; i < UniswapV2Factories.length; i++){
+            queries2.push(uniswapv2helper.getOutputByExactInput(
+                middle,
+                destToken,
+                inputAmounts,
+                UniswapV2Factories[i],
+                part,
+                signer
+            ))
+        }
+    
+        queries2.push(uniswapv3helper.getOutputByExactInput(middle,destToken,inputAmounts,uniswapv3_fee,ADDRESS.V3QUOTE_V2,part,signer)); 
+        queries2.push(aavehelper.getOutputByExactInput(middle,destToken,inputAmounts,ADDRESS.AAVEPOOLV2,part,signer));
+        queries2.push(dodohelper.getOutputByExactInput(middle,destToken,inputAmounts,null,part,signer));
+        
+        matrix = [];      
+        const partResults2 = await Promise.all(queries2);
+        for(let i = 0; i < partResults2.length; i++){
+            matrix.push(partResults2[i]);
+        }    
+
+        res = findBestDistributionWithBigNumber(part, matrix);
+
+        // 归一化distribution数组
+        distribution_count = 0;
+        distribution = res.distribution;
+        for(let i = 0; i < distribution.length; i++){
+            distribution_count += distribution[i];
+        }
+        for(let i = 0; i < distribution.length; i++){
+            distribution[i] = Math.round(distribution[i]/distribution_count*100);
+        }        
+        path2 = [middle, destToken, 0, distribution, 0];  // 添加路径
+
+        if (res.returnAmount.isGreaterThan(maxReturnAmount) ){
+            maxReturnAmount = res.returnAmount;
+            paths[1] = path1;
+            paths[2] = path2; 
+        }
+
+    }
+    
+
+
+
+
+    // 特殊token的转换，例如aave和compound
+    destToken = tmp;
+    if (aavehelper.isAToken(destToken)) {
+        const address = aavehelper.getUnderlyingToken(destToken);
+        paths.push([address, destToken, 0, [0, 0, 0, 0, 1,0], 2]);
     }
 
-    for(let i = 0; i < details.display.length; i++) {
-        if (details.display[i].name=="FxSwap"){
-            details.display[i].fee = estimatedGas * gasPrice * ETHprice / 1e18;
-            details.minimumReceived = details.display[i].youGet;
-            details.estimatedCost = details.display[i].fee;
-        } else{
-            details.display[i].fee = uniFee;
+    // 过滤掉相同的token路径
+    const res = [];
+    for (let i = 0; i < paths.length; i++) {
+        if (paths[i][0] !== paths[i][1]) {
+            res.push(paths[i]);
         }
     }
-    
-    res.send(details)
-})
+
+    // returnAmount 代表中间swap时返回的数量
+    // distribution 代表中间swap时的分配比例 
+    // paths 代表最终的路径
+    return {returnAmount : maxReturnAmount, distribution, paths: res};
+}
+
+app.get("/", (req, res) => {
+    res.send("Hello FxSwap!");
+});
+
+app.get("/quote", async (req, res) => {
+    const srcToken = req.query.srcToken;  // 源token
+    const destToken = req.query.destToken;  // 目标token
+    const inputAmounts = req.query.inputAmounts; // 源token数量
+    const part = req.query.part;    // 分成几份进行计算
+    const slippage = req.query.slippage; // 滑点
+    const address = req.query.address; // 用户地址
+    const depth = Number(req.query.depth); // 搜索深度
+
+    const uniswapGas = 150000; // uniswap 估计gas
+    const ETHprice = 2000; // 假设2000usd
+
+    // 深度为1
+    if (depth == 1) {
+        // 获取最优路径
+        let bestPath = await routerPath1(srcToken, destToken, inputAmounts, part);
+
+        // 获取展示信息
+        let display = await getDisplayInformation(srcToken, destToken, inputAmounts, bestPath.returnAmount);
+        
+        // 构造交易数据
+        const trades = await buildTrades(bestPath.paths);
+        let iface = new ethers.utils.Interface(FXSWAPABI);
+        const txData = iface.encodeFunctionData("performSwapCollection", [
+			{
+				"swaps":[ 
+					{
+						"trades":trades   // 只支持一条路径
+					}
+				]
+			},
+            srcToken, 
+			destToken,  
+			inputAmounts
+        ]
+        );
+
+        res.send({bestPath,display,txData});
+        return;
+    }
+
+
+    if (depth == 2) {
+        let bestPath = await routerPath2(srcToken, destToken, inputAmounts, part);
+        res.send({bestPath});
+        return;
+
+    }
+
+
+
+
+});
 
 app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`)
-})
+    console.log(`Example app listening on port ${port}`);
+});
