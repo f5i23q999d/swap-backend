@@ -22,6 +22,10 @@ const Util = require("./helpers/utils/util.js");
 
 const uniswapv3_fee = 3000;
 
+function bitAt(num, pos) {
+    return (num >> pos) & 1;
+}
+
 function findBestDistributionWithBigNumber(s, amounts) {
     const n = amounts.length;
 
@@ -222,17 +226,22 @@ async function buildTrades(paths){
 
 }
 
-async function routerPath1(srcToken, destToken, inputAmounts, part) {
+async function routerPath1(srcToken, destToken, inputAmounts, part, flag) {
+    // dex顺序 [sushiswap,shibaswap,uniswapv2,uniswapv3,aave,dodo]
+
     const paths = [];
 
     // 先做第一层转换，例如aave和compound, 都是Defi的token与对应token的转换
     const aavehelper = new Aavehelper();
     if (aavehelper.isAToken(srcToken)) {
+        if (bitAt(flag,4)==1){
+            return {returnAmount:0, distribution:[0,0,0,0,0,0], paths: []};// 如果初始token是atoken且没有激活aave协议，则不能进行swap
+        }        
         const UNDERLYING_ASSET_ADDRESS = aavehelper.getUnderlyingToken(srcToken);
-        paths.push([srcToken, UNDERLYING_ASSET_ADDRESS, inputAmounts, [0, 0, 0, 0, 1, 0], 1]); // 最后的1代表deposit
+        paths.push([srcToken, UNDERLYING_ASSET_ADDRESS, inputAmounts, [0, 0, 0, 0, 1, 0], 1]); // 最后的1代表aave的deposit
         srcToken = UNDERLYING_ASSET_ADDRESS;
     }
-    // if (compoundTokenList.includes(srcToken))  如果源token是ctoken
+    // if (compoundhelper.isCToken(srcToken))  如果源token是ctoken
     inputAmounts = inputAmounts; //第一层转换后更新inputAmounts
 
     let tmp = destToken;
@@ -240,30 +249,22 @@ async function routerPath1(srcToken, destToken, inputAmounts, part) {
     if (aavehelper.isAToken(destToken)) {
         destToken = aavehelper.getUnderlyingToken(destToken);
     }
-    // if (compoundTokenList.includes(destToken))  如果目标token是ctoken
+    // if (compoundhelper.isCToken(srcToken))   如果目标token是ctoken
     
-    const queries = [];
-    const UniswapV2Factories = [ADDRESS.SushiswapFactory,ADDRESS.ShibaswapFactory,ADDRESS.UniswapV2Factory];  // 都是基于uni的v2协议 
-    let uniswapv2helper = new Uniswapv2helper();
-    for(let i = 0; i < UniswapV2Factories.length; i++){
-        queries.push(uniswapv2helper.getOutputByExactInput(
-            srcToken,
-            destToken,
-            inputAmounts,
-            UniswapV2Factories[i],
-            part,
-            signer
-        ))
-    }
+    const queries = []; // 查询队列
+    let uniswapv2helper = new Uniswapv2helper(); // 都是基于uni的v2协议 
+    bitAt(flag,0)==1?queries.push(uniswapv2helper.getOutputByExactInput(srcToken,destToken,inputAmounts,ADDRESS.SushiswapFactory,part,signer)):queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
+    bitAt(flag,1)==1?queries.push(uniswapv2helper.getOutputByExactInput(srcToken,destToken,inputAmounts,ADDRESS.ShibaswapFactory,part,signer)):queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
+    bitAt(flag,2)==1?queries.push(uniswapv2helper.getOutputByExactInput(srcToken,destToken,inputAmounts,ADDRESS.UniswapV2Factory,part,signer)):queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
 
     const uniswapv3helper = new Uniswapv3helper();
-    queries.push(uniswapv3helper.getOutputByExactInput(srcToken,destToken,inputAmounts,uniswapv3_fee,ADDRESS.V3QUOTE_V2,part,signer));
+    bitAt(flag,3)==1?queries.push(uniswapv3helper.getOutputByExactInput(srcToken,destToken,inputAmounts,uniswapv3_fee,ADDRESS.V3QUOTE_V2,part,signer)):queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
 
     
-    queries.push(aavehelper.getOutputByExactInput(srcToken,destToken,inputAmounts,ADDRESS.AAVEPOOLV2,part,signer));
+    bitAt(flag,4)==1?queries.push(aavehelper.getOutputByExactInput(srcToken,destToken,inputAmounts,ADDRESS.AAVEPOOLV2,part,signer)):queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
     
     const dodohelper = new Dodohelper();
-    queries.push(dodohelper.getOutputByExactInput(srcToken,destToken,inputAmounts,null,part,signer));
+    bitAt(flag,5)==1?queries.push(dodohelper.getOutputByExactInput(srcToken,destToken,inputAmounts,null,part,signer)):queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
     
     // matrix矩阵保存每个swap进行part划分后计算得到的金额结果，例如 
     /*
@@ -301,6 +302,9 @@ async function routerPath1(srcToken, destToken, inputAmounts, part) {
     // 特殊token的转换，例如aave和compound
     destToken = tmp;
     if (aavehelper.isAToken(destToken)) {
+        if (bitAt(flag,4)==1){
+            return {returnAmount:0, distribution:[0,0,0,0,0,0], paths: []};// 不能进行swap
+        }    
         const address = aavehelper.getUnderlyingToken(destToken);
         paths.push([address, destToken, 0, [0, 0, 0, 0, 1,0], 2]);
     }
@@ -476,9 +480,10 @@ app.get("/quote", async (req, res) => {
     const destToken = req.query.destToken;  // 目标token
     const inputAmounts = req.query.inputAmounts; // 源token数量
     const part = req.query.part;    // 分成几份进行计算
-    const slippage = req.query.slippage; // 滑点
+    const slippage = isNaN(Number(req.query.slippage))?5:Number(req.query.slippage); // 滑点
     const address = req.query.address; // 用户地址
-    const depth = Number(req.query.depth); // 搜索深度
+    const depth = isNaN(Number(req.query.depth))?1:Number(req.query.depth); // 搜索深度
+    const flag = isNaN(Number(req.query.flag))?2**52-1:Number(req.query.flag); // dex筛选位
 
     const uniswapGas = 150000; // uniswap 估计gas
     const ETHprice = 2000; // 假设2000usd
@@ -486,10 +491,11 @@ app.get("/quote", async (req, res) => {
     // 深度为1
     if (depth == 1) {
         // 获取最优路径
-        let bestPath = await routerPath1(srcToken, destToken, inputAmounts, part);
+        let bestPath = await routerPath1(srcToken, destToken, inputAmounts, part, flag);
 
         // 获取展示信息
         let display = await getDisplayInformation(srcToken, destToken, inputAmounts, bestPath.returnAmount);
+        const minimumReceived = (new BigNumber(display[0].youGet.toFixed(6))).multipliedBy(1000 - slippage).dividedBy(1000).toString();
         
         // 构造交易数据
         const trades = await buildTrades(bestPath.paths);
@@ -508,7 +514,7 @@ app.get("/quote", async (req, res) => {
         ]
         );
 
-        res.send({bestPath,display,txData});
+        res.send({bestPath,display,txData,minimumReceived,estimatedCost:8.88});
         return;
     }
 
