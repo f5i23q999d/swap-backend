@@ -1,0 +1,34 @@
+{
+  "name": "swap-backend",
+  "version": "1.0.0",
+  "description": "1.运行 npm install 安装依赖 2.node start.js 启动服务 3.mocha 测试helper 4.node ./test/test.js 测试流程",
+  "main": "config.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "bignumber": "^1.1.0",
+    "bignumber.js": "^9.1.1",
+    "chai": "^4.3.7",
+    "ethers": "^5.7.2",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "mocha": "^10.2.0"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/f5i23q999d/swap-backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/f5i23q999d/swap-backend/issues"
+  },
+  "homepage": "https://github.com/f5i23q999d/swap-backend#readme"
+}
