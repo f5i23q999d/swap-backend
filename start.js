@@ -274,7 +274,7 @@ async function buildTrades(paths) {
 }
 
 
-async function routerPath(srcToken, destToken, inputAmounts, part, flag, depth) {   //深度是1
+async function routerPath(srcToken, destToken, inputAmounts, part, flag, depth) {  
     // dex顺序 [sushiswap,shibaswap,uniswapv2,uniswapv3,aave,dodo]
 
     const paths = [];
