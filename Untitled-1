@@ -1,7 +1,4 @@
-http://localhost:3000/quote?srcToken=0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE&destToken=0x6B175474E89094C44Da98b954EedeAC495271d0F&inputAmounts=1000000000000000000&part=50&slippage=5&address=0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1&&depth=1
 
 
-http://localhost:3000/quote?srcToken=0xdAC17F958D2ee523a2206206994597C13D831ec7&destToken=0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48&inputAmounts=1000000&part=50&slippage=5&address=0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1&&depth=1
 
-
-http://localhost:3000/quote?srcToken=0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce&destToken=0x111111111117dC0aa78b770fA6A738034120C302&inputAmounts=10000000000000000000000000&part=50&slippage=5&address=0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1&&depth=2
+http://localhost:3000/quote?source_token=0xdAC17F958D2ee523a2206206994597C13D831ec7&target_token=0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48&amount=1000000&part=20&slippage=5&address=0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1&&depth=1

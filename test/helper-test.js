@@ -32,10 +32,11 @@ describe('backend', () => {
 
   it('should get quote from Dodohelper', async () => {
     const dodohelper = new Dodohelper();
-    console.log(await dodohelper.getOutputByExactInput(ADDRESS.DAI,ADDRESS.USDT,"1000000000000000000",null,50,signer)); //1个DAI => USDT
-    console.log(await dodohelper.getOutputByExactInput(ADDRESS.USDT,ADDRESS.DAI,"1000000",null,50,signer)); //1个USDT => DAI
-    console.log(await dodohelper.getOutputByExactInput(ADDRESS.USDT,ADDRESS.USDC,"1000000",null,50,signer)); //1个USDT => USDC
-
+    //console.log(await dodohelper.getOutputByExactInput(ADDRESS.DAI,ADDRESS.USDT,"1000000000000000000",null,50,signer)); //1个DAI => USDT
+    //console.log(await dodohelper.getOutputByExactInput(ADDRESS.USDT,ADDRESS.DAI,"1000000",null,50,signer)); //1个USDT => DAI
+    //console.log(await dodohelper.getOutputByExactInput(ADDRESS.USDT,ADDRESS.USDC,"1000000",null,50,signer)); //1个USDT => USDC
+    //console.log(await dodohelper.getOutputByExactInput(ADDRESS.WETH,ADDRESS.USDT,"1000000000000000000",null,10,signer)); //1个WETH => USDT
+    console.log(await dodohelper.tokenInfo(ADDRESS.WETH,ADDRESS.USDT,signer));
   });
 
 });

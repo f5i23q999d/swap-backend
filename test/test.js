@@ -33,12 +33,13 @@ async function test2(){ //  1 ETH => USDT
     
     const result = await axios.get('http://127.0.0.1:3000/quote',{        
             params: {
-                srcToken: ADDRESS.ETH,
-                destToken: ADDRESS.USDT,
-                inputAmounts: String(1e18),
+                source_token: ADDRESS.ETH,
+                target_token: ADDRESS.USDT,
+                amount: String(1e18),
                 part: 10,
                 slippage: 10,   // 1-500 ->0.1%->50%
                 address: ADDRESS.WALLET,
+                receiver_address: ADDRESS.WALLET,
                 depth: 1
             }          
     });
@@ -52,7 +53,7 @@ async function test2(){ //  1 ETH => USDT
 
     const tx = {
         to : config.FXSWAP_ADDRESS,
-        data : result.data.txData,
+        data : result.data.tx_data,
         gasLimit: "0xffffff",
        value : ethers.utils.parseEther("1.0")
     };    
@@ -73,12 +74,13 @@ async function test3(){ //  100 USDT => ETH
 
     const result = await axios.get('http://127.0.0.1:3000/quote',{        
             params: {
-                srcToken: ADDRESS.USDT,
-                destToken: ADDRESS.ETH,
-                inputAmounts: String(100e6),   // 100 USDT
+                source_token: ADDRESS.USDT,
+                target_token: ADDRESS.ETH,
+                amount: String(100e6),   // 100 USDT
                 part: 10,
                 slippage: 10,   // 1-500 ->0.1%->50%
                 address: ADDRESS.WALLET,
+                receiver_address: ADDRESS.WALLET,
                 depth: 1
             }          
     });
@@ -88,10 +90,11 @@ async function test3(){ //  100 USDT => ETH
 	console.log('Before ETH balance:	', (await wallet.getBalance())/1e18);
 	console.log('Before USDT balance:	', (await USDT.balanceOf(defaultAddress))/1e6);
 
+    await USDT.approve(config.FXSWAP_ADDRESS, String(0));  // 重置授权
     await USDT.approve(config.FXSWAP_ADDRESS, String(100e6));
     const tx = {
         to : config.FXSWAP_ADDRESS,
-        data : result.data.txData,    
+        data : result.data.tx_data,    
     };    
     console.log(await wallet.sendTransaction(tx));    
 
@@ -108,12 +111,13 @@ async function test4(){ //  1 USDT => DAI
 
     const result = await axios.get('http://127.0.0.1:3000/quote',{        
             params: {
-                srcToken: ADDRESS.USDT,
-                destToken: ADDRESS.DAI,
-                inputAmounts: String(100e6),   // 100 USDT
+                source_token: ADDRESS.USDT,
+                target_token: ADDRESS.DAI,
+                amount: String(100e6),   // 100 USDT
                 part: 10,
                 slippage: 10,   // 1-500 ->0.1%->50%
                 address: ADDRESS.WALLET,
+                receiver_address: ADDRESS.WALLET,
                 depth: 1
             }          
     });
@@ -128,7 +132,7 @@ async function test4(){ //  1 USDT => DAI
     await USDT.approve(config.FXSWAP_ADDRESS, String(100e6));
     const tx = {
         to : config.FXSWAP_ADDRESS,
-        data : result.data.txData,    
+        data : result.data.tx_data,    
     };    
     console.log(await wallet.sendTransaction(tx));    
 
@@ -140,7 +144,4 @@ async function test4(){ //  1 USDT => DAI
 }
 
 
-
-// test2()
-// test3()
-test4()
+ test2()
