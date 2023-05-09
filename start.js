@@ -150,10 +150,11 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
                 source_token : path[0],
                 target_token : path[1],
             });
-            paths[0].push(tmp);
+            
         } 
-    }
         
+    }
+        paths[0].push(tmp);
     }
 
 
