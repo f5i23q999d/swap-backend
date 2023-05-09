@@ -274,7 +274,7 @@ async function buildTrades(paths) {
 }
 
 
-async function routerPath1(srcToken, destToken, inputAmounts, part, flag) {   //深度是1
+async function routerPath(srcToken, destToken, inputAmounts, part, flag, depth) {   //深度是1
     // dex顺序 [sushiswap,shibaswap,uniswapv2,uniswapv3,aave,dodo]
 
     const paths = [];
@@ -314,32 +314,58 @@ async function routerPath1(srcToken, destToken, inputAmounts, part, flag) {   //
     const dodohelper = new Dodohelper();
     bitAt(flag, 5) == 1 ? queries.push(dodohelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, part, signer)) : queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
 
-    // matrix矩阵保存每个swap进行part划分后计算得到的金额结果，例如 
-    /*
-        [
-            [0,1,2,3],
-            [0,2,4,6],
-            [0,3,6,9],
-            [0,4,8,12]
-        ]
-        这是part=3的情形，第一行的0代表输入金额为0时，输出的数量， 第一行的1代表输入金额为总的1/3时输出的数量，第一行的2代表输入金额为总的2/3时输出的数量,以此类推
-    */
-    let matrix = [];
 
-    const partResults = await Promise.all(queries);
-    for (let i = 0; i < partResults.length; i++) {
-        matrix.push(partResults[i]);
+    let returnAmount = 0;
+    let distribution = null;
+    if (depth == 1){
+        // matrix矩阵保存每个swap进行part划分后计算得到的金额结果，例如 
+        /*
+            [
+                [0,1,2,3],
+                [0,2,4,6],
+                [0,3,6,9],
+                [0,4,8,12]
+            ]
+            这是part=3的情形，第一行的0代表输入金额为0时，输出的数量， 第一行的1代表输入金额为总的1/3时输出的数量，第一行的2代表输入金额为总的2/3时输出的数量,以此类推
+        */
+        let matrix = [];
+
+        const partResults = await Promise.all(queries);
+        for (let i = 0; i < partResults.length; i++) {
+            matrix.push(partResults[i]);
+        }
+
+        // 计算最优路径
+        const res = findBestDistributionWithBigNumber(part, matrix);
+        returnAmount = res.returnAmount;
+        distribution = res.distribution;
+
+        // 归一化distribution数组
+        distribution = uniformDistribution(distribution);
+
+        console.log(returnAmount, distribution);
+        paths.push({returnAmount : returnAmount, path: [srcToken, destToken, 0, distribution, 0]});  // 添加路径
+    } else if (depth == 2) {
+        const middleToken = [ADDRESS.WETH, ADDRESS.USDT];
+
+        const queries = [];
+        for(const middle of middleToken){
+            queries.push(_queryBetweenInputAndOutputWithMiddle(srcToken, middle, destToken, inputAmounts, part, flag));
+        }
+        const queryResults = await Promise.all(queries);
+        let maxIndex = 0;
+        let maxReturnAmount = new BigNumber(0);
+        for (let i = 0; i < queryResults.length; i++) {
+            if ((new BigNumber(queryResults[i].returnAmount)).isGreaterThan(maxReturnAmount)) {
+                maxReturnAmount = queryResults[i].returnAmount;
+                maxIndex = i;
+            }
+        }
+        for(let i = 0; i<queryResults[maxIndex].paths.length; i++){
+            paths.push(queryResults[maxIndex].paths[i]);
+        }
+        returnAmount = queryResults[maxIndex].returnAmount;
     }
-
-    // 计算最优路径
-    let { returnAmount, distribution } = findBestDistributionWithBigNumber(part, matrix);
-
-    // 归一化distribution数组
-    distribution = uniformDistribution(distribution);
-
-    console.log(returnAmount, distribution);
-    paths.push({returnAmount : returnAmount, path: [srcToken, destToken, 0, distribution, 0]});  // 添加路径
-
 
     // 特殊token的转换，例如aave和compound
     destToken = tmp;
@@ -407,72 +433,6 @@ async function _queryBetweenInputAndOutputWithMiddle(srcToken, middle, destToken
 }
 
 
-async function routerPath2(srcToken, destToken, inputAmounts, part, flag) { //深度是2
-    // dex顺序 [sushiswap,shibaswap,uniswapv2,uniswapv3,aave,dodo]
-
-    const paths = [];
-
-    // 先做第一层转换，例如aave和compound, 都是Defi的token与对应token的转换
-    const aavehelper = new Aavehelper();
-    if (aavehelper.isAToken(srcToken)) {
-        if (bitAt(flag, 4) == 0) {
-            return { returnAmount: 0, distribution: [0, 0, 0, 0, 0, 0], paths: [] };// 如果初始token是atoken且没有激活aave协议，则不能进行swap
-        }
-        const UNDERLYING_ASSET_ADDRESS = aavehelper.getUnderlyingToken(srcToken);
-        paths.push({returnAmount: 0, path: [srcToken, UNDERLYING_ASSET_ADDRESS, inputAmounts, [0, 0, 0, 0, 1, 0], 1]}); // 最后的1代表aave的deposit
-        srcToken = UNDERLYING_ASSET_ADDRESS;
-    }
-    // if (compoundhelper.isCToken(srcToken))  如果源token是ctoken
-    inputAmounts = inputAmounts; //第一层转换后更新inputAmounts
-
-    let tmp = destToken;
-    // 最后一层转换
-    if (aavehelper.isAToken(destToken)) {
-        destToken = aavehelper.getUnderlyingToken(destToken);
-    }
-    // if (compoundhelper.isCToken(srcToken))   如果目标token是ctoken
-
-
-    const middleToken = [ADDRESS.WETH, ADDRESS.USDT];
-
-    const queries = [];
-    for(const middle of middleToken){
-        queries.push(_queryBetweenInputAndOutputWithMiddle(srcToken, middle, destToken, inputAmounts, part, flag));
-    }
-    const queryResults = await Promise.all(queries);
-    let maxIndex = 0;
-    let maxReturnAmount = new BigNumber(0);
-    for (let i = 0; i < queryResults.length; i++) {
-        if ((new BigNumber(queryResults[i].returnAmount)).isGreaterThan(maxReturnAmount)) {
-            maxReturnAmount = queryResults[i].returnAmount;
-            maxIndex = i;
-        }
-    }
-    for(let i = 0; i<queryResults[maxIndex].paths.length; i++){
-        paths.push(queryResults[maxIndex].paths[i]);
-    }
-
-    // 特殊token的转换，例如aave和compound
-    destToken = tmp;
-    if (aavehelper.isAToken(destToken)) {
-        if (bitAt(flag, 4) == 0) {
-            return { returnAmount: 0, distribution: [0, 0, 0, 0, 0, 0], paths: [] };// 不能进行swap
-        }
-        const address = aavehelper.getUnderlyingToken(destToken);
-        paths.push({returnAmount: queryResults[maxIndex].returnAmount,path:[address, destToken, 0, [0, 0, 0, 0, 1, 0], 2]});
-    }
-
-    // 过滤掉相同的token路径
-    const res = [];
-    for (let i = 0; i < paths.length; i++) {
-        if (paths[i].path[0] !== paths[i].path[1]) {
-            res.push(paths[i]);
-        }
-    }
-
-    return { returnAmount : maxReturnAmount, paths: res };
-}
-
 app.get("/", (req, res) => {
     res.send("Hello FxSwap!");
 });
@@ -495,15 +455,7 @@ app.get("/quote", async (req, res) => {
 
    
     let result = {};
-    let bestPath = null;
-
-    if (depth == 1){  // 除头尾的特殊转换（aave和compound），中间的遍历深度是1， 例如 adai => dai => usdc =>audc
-        bestPath = await routerPath1(srcToken, destToken, inputAmounts, part, flag);
-    }
-
-    if (depth == 2){  // 除头尾的特殊转换（aave和compound），中间的遍历深度是2， 例如 adai => dai => usdt => usdc =>audc
-        bestPath = await routerPath2(srcToken, destToken, inputAmounts, part, flag);
-    }
+    let bestPath = await routerPath(srcToken, destToken, inputAmounts, part, flag, depth);  //  depth代表除头尾的特殊转换（aave和compound）中间的遍历深度， 例如 adai => dai => usdt => usdc =>audc， depth=2
 
     let display = await getDisplayInformation(srcToken, destToken, inputAmounts, bestPath);
     result.source_token = srcToken;
