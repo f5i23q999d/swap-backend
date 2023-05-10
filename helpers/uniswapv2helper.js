@@ -13,6 +13,7 @@ class Uniswapv2helper {
         part,
         signer
     ) {
+        try{
         const contract = new ethers.Contract(router, IUniswapV2Factory, signer);
 
         if (token1 === ADDRESS.ETH) {
@@ -41,7 +42,10 @@ class Uniswapv2helper {
             );
         }
       
-        return res;
+        return res;}
+        catch(err){
+            return new Array(Number(part) + 1).fill(new BigNumber(0));
+        }
     }
 }
 

@@ -13,6 +13,7 @@ function fromWei(numStr, decimals) {
 
 class Dodohelper {
   async getOutputByExactInput(token1, token2, amountIn, router, part, signer) {
+    try{
     const res = [];
     amountIn = new BigNumber(amountIn);
     // 先查询是否为v1池子
@@ -193,7 +194,10 @@ class Dodohelper {
     } else {
       return new Array(Number(part) + 1).fill(new BigNumber(0));
     }
-    return res;
+    return res;}
+    catch(err){
+      return new Array(Number(part) + 1).fill(new BigNumber(0));
+    }
   }
 
   async tokenInfo(token1, token2, signer) {

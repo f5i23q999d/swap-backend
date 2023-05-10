@@ -14,6 +14,7 @@ class Uniswapv3helper {
         part,
         signer
     ) {
+        try{
         if (token1 === ADDRESS.ETH) {
             token1 = ADDRESS.WETH;
         }
@@ -46,7 +47,10 @@ class Uniswapv3helper {
         }
 
         return res;
+    } catch(err){
+        return new Array(Number(part) + 1).fill(new BigNumber(0));
     }
+}
 }
 
 module.exports = Uniswapv3helper;

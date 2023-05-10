@@ -105,27 +105,22 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
             UniswapV2Factories[i],
             1,
             signer
-        ).catch((e) => { return Promise.resolve("noResult"); }))
+        ))
     }
 
     const uniswapv3helper = new Uniswapv3helper();
-    queries.push(uniswapv3helper.getOutputByExactInput(srcToken, destToken, inputAmounts, uniswapv3_fee, ADDRESS.V3QUOTE_V2, 1, signer).catch((e) => { return Promise.resolve("noResult"); }));
+    queries.push(uniswapv3helper.getOutputByExactInput(srcToken, destToken, inputAmounts, uniswapv3_fee, ADDRESS.V3QUOTE_V2, 1, signer));
 
     const aavehelper = new Aavehelper();
-    queries.push(aavehelper.getOutputByExactInput(srcToken, destToken, inputAmounts, ADDRESS.AAVEPOOLV2, 1, signer).catch((e) => { return Promise.resolve("noResult"); }));
+    queries.push(aavehelper.getOutputByExactInput(srcToken, destToken, inputAmounts, ADDRESS.AAVEPOOLV2, 1, signer));
 
     const dodohelper = new Dodohelper();
-    queries.push(dodohelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, 1, signer).catch((e) => { return Promise.resolve("noResult"); }));
+    queries.push(dodohelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, 1, signer));
 
     let matrix = [];
     const partResults = await Promise.all(queries);
     for (let i = 0; i < partResults.length; i++) {
-        if (partResults[i] === "noResult") {
-            matrix.push([0, 0]);
-        } else {
             matrix.push(partResults[i]);
-        }
-
     }
 
     const name_string = ["Sushiswap", "Shibaswap", "UniswapV2", "UniswapV3", "AaveV2", "Dodo"];
@@ -441,6 +436,7 @@ app.get("/", (req, res) => {
 app.get("/quote", async (req, res) => {
     const start = new Date().getTime();
 
+    try{
     const srcToken = req.query.source_token;  // 源token
     const destToken = req.query.target_token;  // 目标token
     const inputAmounts = req.query.amount; // 源token数量
@@ -454,7 +450,7 @@ app.get("/quote", async (req, res) => {
     const uniswapGas = 150000; // uniswap 估计gas
     const ETHprice = 2000; // 假设2000usd
 
-   
+    
     let result = {};
     let bestPath = await routerPath(srcToken, destToken, inputAmounts, part, flag, depth);  //  depth代表除头尾的特殊转换（aave和compound）中间的遍历深度， 例如 adai => dai => usdt => usdc =>audc， depth=2
 
@@ -496,7 +492,9 @@ app.get("/quote", async (req, res) => {
     
     res.send(result);     
 
-    
+    } catch(err){
+        res.send(err);
+    }    
 
 
     const end = new Date().getTime();

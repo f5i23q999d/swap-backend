@@ -36,7 +36,9 @@ describe('backend', () => {
     //console.log(await dodohelper.getOutputByExactInput(ADDRESS.USDT,ADDRESS.DAI,"1000000",null,50,signer)); //1个USDT => DAI
     //console.log(await dodohelper.getOutputByExactInput(ADDRESS.USDT,ADDRESS.USDC,"1000000",null,50,signer)); //1个USDT => USDC
     //console.log(await dodohelper.getOutputByExactInput(ADDRESS.WETH,ADDRESS.USDT,"1000000000000000000",null,10,signer)); //1个WETH => USDT
-    console.log(await dodohelper.tokenInfo(ADDRESS.WETH,ADDRESS.USDT,signer));
+    //console.log(await dodohelper.tokenInfo(ADDRESS.WETH,ADDRESS.USDT,signer));
+
+    console.log(await dodohelper.getOutputByExactInput(ADDRESS.ADAI,ADDRESS.AUSDC,"100000000",null,10,signer)); //1个WETH => USDT
   });
 
 });
