@@ -6,7 +6,7 @@ class Aavehelper {
 
     constructor() {
         this.list = aaveTokenList.proto;
-    }  
+    }
 
     async getOutputByExactInput(
         token1,
@@ -29,30 +29,30 @@ class Aavehelper {
     }
 
     isAToken(token) {
-       for(let i of this.list){
-              if(i.aTokenAddress === token){
+        for (let i of this.list) {
+            if (i.aTokenAddress === token) {
                 return true;
-              }
-         }
-         return false;
+            }
+        }
+        return false;
     }
 
     getUnderlyingToken(token) {
-        for(let i of this.list){
-            if(i.aTokenAddress === token){
-              return i.address;
+        for (let i of this.list) {
+            if (i.aTokenAddress === token) {
+                return i.address;
             }
-       }
-       return "";
+        }
+        return "";
     }
 
     getAToken(token) {
-        for(let i of this.list){
-            if(i.address === token){
-              return i.aTokenAddress;
+        for (let i of this.list) {
+            if (i.address === token) {
+                return i.aTokenAddress;
             }
-       }
-       return "";
+        }
+        return "";
     }
 }
 

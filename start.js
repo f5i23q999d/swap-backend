@@ -120,7 +120,7 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
     let matrix = [];
     const partResults = await Promise.all(queries);
     for (let i = 0; i < partResults.length; i++) {
-            matrix.push(partResults[i]);
+        matrix.push(partResults[i]);
     }
 
     const name_string = ["Sushiswap", "Shibaswap", "UniswapV2", "UniswapV3", "AaveV2", "Dodo"];
@@ -132,34 +132,34 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
     // 构建paths对象
     const paths = [[]]; // 暂时只有一条路线
 
-    for(let i = 0 ;i<bestPath.paths.length;i++){
+    for (let i = 0; i < bestPath.paths.length; i++) {
         let path = bestPath.paths[i].path;
 
         path[3] = uniformDistribution(path[3]);
         const tmp = [];
-        for(let j = 0 ;j<path[3].length;j++){
-        if(path[3][j] > 0){
-            tmp.push({
-                name : name_string[j],
-                part : path[3][j],
-                source_token : path[0],
-                target_token : path[1],
-            });
-            
-        } 
-        
-    }
+        for (let j = 0; j < path[3].length; j++) {
+            if (path[3][j] > 0) {
+                tmp.push({
+                    name: name_string[j],
+                    part: path[3][j],
+                    source_token: path[0],
+                    target_token: path[1],
+                });
+
+            }
+
+        }
         paths[0].push(tmp);
     }
 
 
     const result = {
-        source_token : srcToken,
-        target_token : destToken,
-        source_token_amount : inputAmounts,
-        target_token_amount : bestPath.returnAmount,
-        paths : paths,
-        swaps : swaps,
+        source_token: srcToken,
+        target_token: destToken,
+        source_token_amount: inputAmounts,
+        target_token_amount: bestPath.returnAmount,
+        paths: paths,
+        swaps: swaps,
     }
 
 
@@ -270,7 +270,7 @@ async function buildTrades(paths) {
 }
 
 
-async function routerPath(srcToken, destToken, inputAmounts, part, flag, depth) {  
+async function routerPath(srcToken, destToken, inputAmounts, part, flag, depth) {
     // dex顺序 [sushiswap,shibaswap,uniswapv2,uniswapv3,aave,dodo]
 
     const paths = [];
@@ -282,7 +282,7 @@ async function routerPath(srcToken, destToken, inputAmounts, part, flag, depth) 
             return { returnAmount: 0, distribution: [0, 0, 0, 0, 0, 0], paths: [] };// 如果初始token是atoken且没有激活aave协议，则不能进行swap
         }
         const UNDERLYING_ASSET_ADDRESS = aavehelper.getUnderlyingToken(srcToken);
-        paths.push({returnAmount : inputAmounts, path: [srcToken, UNDERLYING_ASSET_ADDRESS, inputAmounts, [0, 0, 0, 0, 1, 0], 1]}); // 最后的1代表aave的deposit
+        paths.push({ returnAmount: inputAmounts, path: [srcToken, UNDERLYING_ASSET_ADDRESS, inputAmounts, [0, 0, 0, 0, 1, 0], 1] }); // 最后的1代表aave的deposit
         srcToken = UNDERLYING_ASSET_ADDRESS;
     }
     // if (compoundhelper.isCToken(srcToken))  如果源token是ctoken
@@ -313,7 +313,7 @@ async function routerPath(srcToken, destToken, inputAmounts, part, flag, depth) 
 
     let returnAmount = 0;
     let distribution = null;
-    if (depth == 1){
+    if (depth == 1) {
         // matrix矩阵保存每个swap进行part划分后计算得到的金额结果，例如 
         /*
             [
@@ -340,12 +340,12 @@ async function routerPath(srcToken, destToken, inputAmounts, part, flag, depth) 
         distribution = uniformDistribution(distribution);
 
         console.log(returnAmount, distribution);
-        paths.push({returnAmount : returnAmount, path: [srcToken, destToken, 0, distribution, 0]});  // 添加路径
+        paths.push({ returnAmount: returnAmount, path: [srcToken, destToken, 0, distribution, 0] });  // 添加路径
     } else if (depth == 2) {
         const middleToken = [ADDRESS.WETH, ADDRESS.USDT];
 
         const queries = [];
-        for(const middle of middleToken){
+        for (const middle of middleToken) {
             queries.push(_queryBetweenInputAndOutputWithMiddle(srcToken, middle, destToken, inputAmounts, part, flag));
         }
         const queryResults = await Promise.all(queries);
@@ -357,7 +357,7 @@ async function routerPath(srcToken, destToken, inputAmounts, part, flag, depth) 
                 maxIndex = i;
             }
         }
-        for(let i = 0; i<queryResults[maxIndex].paths.length; i++){
+        for (let i = 0; i < queryResults[maxIndex].paths.length; i++) {
             paths.push(queryResults[maxIndex].paths[i]);
         }
         returnAmount = queryResults[maxIndex].returnAmount;
@@ -370,7 +370,7 @@ async function routerPath(srcToken, destToken, inputAmounts, part, flag, depth) 
             return { returnAmount: 0, distribution: [0, 0, 0, 0, 0, 0], paths: [] };// 不能进行swap
         }
         const address = aavehelper.getUnderlyingToken(destToken);
-        paths.push({returnAmount : returnAmount,path:[address, destToken, 0, [0, 0, 0, 0, 1, 0], 2]});
+        paths.push({ returnAmount: returnAmount, path: [address, destToken, 0, [0, 0, 0, 0, 1, 0], 2] });
     }
 
     // 过滤掉相同的token路径
@@ -383,7 +383,7 @@ async function routerPath(srcToken, destToken, inputAmounts, part, flag, depth) 
 
     // returnAmount 代表中间swap时返回的数量
     // paths 代表最终的路径
-    return { returnAmount, paths};
+    return { returnAmount, paths };
 }
 
 
@@ -414,17 +414,17 @@ async function _queryBetweenInputAndOutput(srcToken, destToken, inputAmounts, pa
     }
     path = [srcToken, destToken, 0, distribution, 0];
 
-    return  {returnAmount:returnAmount.toString(), path};
+    return { returnAmount: returnAmount.toString(), path };
 }
 
 
 async function _queryBetweenInputAndOutputWithMiddle(srcToken, middle, destToken, inputAmounts, part, flag) {
 
-    const res1 = await _queryBetweenInputAndOutput(srcToken,middle,inputAmounts,part,flag);
+    const res1 = await _queryBetweenInputAndOutput(srcToken, middle, inputAmounts, part, flag);
 
-    const res2 = await _queryBetweenInputAndOutput(middle,destToken,res1.returnAmount,part,flag);
+    const res2 = await _queryBetweenInputAndOutput(middle, destToken, res1.returnAmount, part, flag);
 
-    return {returnAmount:res2.returnAmount, paths:[res1,res2]};
+    return { returnAmount: res2.returnAmount, paths: [res1, res2] };
 
 }
 
@@ -436,65 +436,65 @@ app.get("/", (req, res) => {
 app.get("/quote", async (req, res) => {
     const start = new Date().getTime();
 
-    try{
-    const srcToken = req.query.source_token;  // 源token
-    const destToken = req.query.target_token;  // 目标token
-    const inputAmounts = req.query.amount; // 源token数量
-    const part = req.query.part;    // 分成几份进行计算
-    const slippage = isNaN(Number(req.query.slippage)) ? 5 : Number(req.query.slippage); // 滑点
-    const senderAddress = req.query.sender_address; // 用户地址
-    const receiverAddress = req.query.receiver_address;
-    const depth = isNaN(Number(req.query.depth)) ? 1 : Number(req.query.depth); // 搜索深度
-    const flag = isNaN(Number(req.query.flag)) ? 2 ** 52 - 1 : Number(req.query.flag); // dex筛选位
+    try {
+        const srcToken = req.query.source_token;  // 源token
+        const destToken = req.query.target_token;  // 目标token
+        const inputAmounts = req.query.amount; // 源token数量
+        const part = req.query.part;    // 分成几份进行计算
+        const slippage = isNaN(Number(req.query.slippage)) ? 5 : Number(req.query.slippage); // 滑点
+        const senderAddress = req.query.sender_address; // 用户地址
+        const receiverAddress = req.query.receiver_address;
+        const depth = isNaN(Number(req.query.depth)) ? 1 : Number(req.query.depth); // 搜索深度
+        const flag = isNaN(Number(req.query.flag)) ? 2 ** 52 - 1 : Number(req.query.flag); // dex筛选位
 
-    const uniswapGas = 150000; // uniswap 估计gas
-    const ETHprice = 2000; // 假设2000usd
+        const uniswapGas = 150000; // uniswap 估计gas
+        const ETHprice = 2000; // 假设2000usd
 
-    
-    let result = {};
-    let bestPath = await routerPath(srcToken, destToken, inputAmounts, part, flag, depth);  //  depth代表除头尾的特殊转换（aave和compound）中间的遍历深度， 例如 adai => dai => usdt => usdc =>audc， depth=2
 
-    let display = await getDisplayInformation(srcToken, destToken, inputAmounts, bestPath);
-    result.source_token = srcToken;
-    result.target_token = destToken;
-    result.source_token_amount = inputAmounts;
-    result.target_token_amount = display.target_token_amount;
-    result.swaps = display.swaps;
-    result.paths = display.paths;
-    result.minimumReceived = (new BigNumber(display.swaps[0].youGet.toFixed(6))).multipliedBy(1000 - slippage).dividedBy(1000).toString();
-    result.estimate_gas = 8888888;
-    result.estimate_cost = 9.99;
-    result.minimum_reception = 1000;
-    result.price_impact = 10.99;
+        let result = {};
+        let bestPath = await routerPath(srcToken, destToken, inputAmounts, part, flag, depth);  //  depth代表除头尾的特殊转换（aave和compound）中间的遍历深度， 例如 adai => dai => usdt => usdc =>audc， depth=2
 
-    const paths = [];
-    for (let i = 0; i < bestPath.paths.length; i++) {
-        paths.push(bestPath.paths[i].path);
-    }
+        let display = await getDisplayInformation(srcToken, destToken, inputAmounts, bestPath);
+        result.source_token = srcToken;
+        result.target_token = destToken;
+        result.source_token_amount = inputAmounts;
+        result.target_token_amount = display.target_token_amount;
+        result.swaps = display.swaps;
+        result.paths = display.paths;
+        result.minimumReceived = (new BigNumber(display.swaps[0].youGet.toFixed(6))).multipliedBy(1000 - slippage).dividedBy(1000).toString();
+        result.estimate_gas = 8888888;
+        result.estimate_cost = 9.99;
+        result.minimum_reception = 1000;
+        result.price_impact = 10.99;
 
-    const trades = await buildTrades(paths);
-    let iface = new ethers.utils.Interface(FXSWAPABI);
-    const txData = iface.encodeFunctionData("performSwapCollection", [
-        {
-            "swaps": [
-                {
-                    "trades": trades   // 只支持一条路径
-                }
-            ]
-        },
-        srcToken,
-        destToken,
-        inputAmounts
-    ]
-    );
+        const paths = [];
+        for (let i = 0; i < bestPath.paths.length; i++) {
+            paths.push(bestPath.paths[i].path);
+        }
 
-    result.tx_data = txData;
-    
-    res.send(result);     
+        const trades = await buildTrades(paths);
+        let iface = new ethers.utils.Interface(FXSWAPABI);
+        const txData = iface.encodeFunctionData("performSwapCollection", [
+            {
+                "swaps": [
+                    {
+                        "trades": trades   // 只支持一条路径
+                    }
+                ]
+            },
+            srcToken,
+            destToken,
+            inputAmounts
+        ]
+        );
 
-    } catch(err){
+        result.tx_data = txData;
+
+        res.send(result);
+
+    } catch (err) {
         res.send(err);
-    }    
+    }
 
 
     const end = new Date().getTime();
