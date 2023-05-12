@@ -1,92 +1,97 @@
 [
-    {
-      "inputs": [],
-      "stateMutability": "nonpayable",
-      "type": "constructor"
-    },
-    {
-      "inputs": [
-        {
-          "components": [
-            {
-              "components": [
-                {
-                  "components": [
-                    {
-                      "internalType": "address",
-                      "name": "sourceToken",
-                      "type": "address"
-                    },
-                    {
-                      "internalType": "address",
-                      "name": "destinationToken",
-                      "type": "address"
-                    },
-                    {
-                      "internalType": "uint256",
-                      "name": "amount",
-                      "type": "uint256"
-                    },
-                    {
-                      "internalType": "uint256[]",
-                      "name": "distribution",
-                      "type": "uint256[]"
-                    },
-                    {
-                      "components": [
-                        {
-                          "internalType": "address payable",
-                          "name": "exchangeHandler",
-                          "type": "address"
-                        },
-                        {
-                          "internalType": "bytes",
-                          "name": "encodedPayload",
-                          "type": "bytes"
-                        }
-                      ],
-                      "internalType": "struct FxSwap.Order[]",
-                      "name": "orders",
-                      "type": "tuple[]"
-                    }
-                  ],
-                  "internalType": "struct FxSwap.Trade[]",
-                  "name": "trades",
-                  "type": "tuple[]"
-                }
-              ],
-              "internalType": "struct FxSwap.Swap[]",
-              "name": "swaps",
-              "type": "tuple[]"
-            }
-          ],
-          "internalType": "struct FxSwap.SwapCollection",
-          "name": "swaps",
-          "type": "tuple"
-        },
-        {
-          "internalType": "address",
-          "name": "srcToken",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "destToken",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "amountIn",
-          "type": "uint256"
-        }
-      ],
-      "name": "performSwapCollection",
-      "outputs": [],
-      "stateMutability": "payable",
-      "type": "function"
-    },
-    {
-      "stateMutability": "payable",
-      "type": "receive"
-    }
-  ]
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "components": [
+                  {
+                    "internalType": "address",
+                    "name": "sourceToken",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "destinationToken",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "uint256[]",
+                    "name": "distribution",
+                    "type": "uint256[]"
+                  },
+                  {
+                    "components": [
+                      {
+                        "internalType": "address payable",
+                        "name": "exchangeHandler",
+                        "type": "address"
+                      },
+                      {
+                        "internalType": "bytes",
+                        "name": "encodedPayload",
+                        "type": "bytes"
+                      }
+                    ],
+                    "internalType": "struct FxSwap.Order[]",
+                    "name": "orders",
+                    "type": "tuple[]"
+                  }
+                ],
+                "internalType": "struct FxSwap.Trade[]",
+                "name": "trades",
+                "type": "tuple[]"
+              }
+            ],
+            "internalType": "struct FxSwap.Swap[]",
+            "name": "swaps",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct FxSwap.SwapCollection",
+        "name": "swaps",
+        "type": "tuple"
+      },
+      {
+        "internalType": "address",
+        "name": "srcToken",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "destToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountIn",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountOutMin",
+        "type": "uint256"
+      }
+    ],
+    "name": "performSwapCollection",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "receive"
+  }
+]

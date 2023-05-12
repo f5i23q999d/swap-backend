@@ -455,13 +455,14 @@ app.get("/quote", async (req, res) => {
         let bestPath = await routerPath(srcToken, destToken, inputAmounts, part, flag, depth);  //  depth代表除头尾的特殊转换（aave和compound）中间的遍历深度， 例如 adai => dai => usdt => usdc =>audc， depth=2
 
         let display = await getDisplayInformation(srcToken, destToken, inputAmounts, bestPath);
+        const minimumReceived = (new BigNumber(display.swaps[0].youGet.toFixed(6))).multipliedBy(1000 - slippage).dividedBy(1000);
         result.source_token = srcToken;
         result.target_token = destToken;
         result.source_token_amount = inputAmounts;
         result.target_token_amount = display.target_token_amount;
         result.swaps = display.swaps;
         result.paths = display.paths;
-        result.minimumReceived = (new BigNumber(display.swaps[0].youGet.toFixed(6))).multipliedBy(1000 - slippage).dividedBy(1000).toString();
+        result.minimumReceived = minimumReceived.toString();
         result.estimate_gas = 8888888;
         result.estimate_cost = 9.99;
         result.minimum_reception = 1000;
@@ -484,7 +485,8 @@ app.get("/quote", async (req, res) => {
             },
             srcToken,
             destToken,
-            inputAmounts
+            inputAmounts,
+            minimumReceived.toFixed(0)
         ]
         );
 
