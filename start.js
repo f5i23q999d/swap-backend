@@ -507,7 +507,7 @@ app.get("/quote", async (req, res) => {
         const slippage = isNaN(Number(req.query.slippage)) ? 5 : Number(req.query.slippage); // 滑点
         const senderAddress = req.query.sender_address; // 用户地址
         const receiverAddress = req.query.receiver_address;
-        const depth = isNaN(Number(req.query.depth)) ? 1 : Number(req.query.depth); // 搜索深度
+        const depth = isNaN(Number(req.query.depth)) ? 0 : Number(req.query.depth); // 搜索深度
         const flag = isNaN(Number(req.query.flag)) ? 2 ** 52 - 1 : Number(req.query.flag); // dex筛选位
 
 
@@ -517,8 +517,14 @@ app.get("/quote", async (req, res) => {
         let result = {};
 
         let start = new Date().getTime();
-        const bestPaths = await Promise.all([routerPath(srcToken, destToken, inputAmounts, part, flag, 1),routerPath(srcToken, destToken, inputAmounts, part, flag, 2)]);//  depth代表除头尾的特殊转换（aave和compound）中间的遍历深度， 例如 adai => dai => usdt => usdc =>audc， depth=2
-        let bestPath =  bestPaths[0].returnAmount.isGreaterThan(bestPaths[1].returnAmount)? bestPaths[0]: bestPaths[1];
+        let bestPath = null;
+        if (depth === 0){
+            const bestPaths = await Promise.all([routerPath(srcToken, destToken, inputAmounts, part, flag, 1),routerPath(srcToken, destToken, inputAmounts, part, flag, 2)]);//  depth代表除头尾的特殊转换（aave和compound）中间的遍历深度， 例如 adai => dai => usdt => usdc =>audc， depth=2
+            bestPath =  bestPaths[0].returnAmount.isGreaterThan(bestPaths[1].returnAmount)? bestPaths[0]: bestPaths[1];
+        } else {
+            bestPath = await routerPath(srcToken, destToken, inputAmounts, part, flag, depth);
+        }
+
         let end = new Date().getTime();
         console.log("寻找路径耗时: " + (end - start) + "ms");
 
