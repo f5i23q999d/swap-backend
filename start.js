@@ -8,6 +8,7 @@ const wallet = new ethers.Wallet(
     config.privateKey,
     provider
 );
+const axios = require('axios');
 const signer = provider.getSigner(wallet.address);
 const MAX_INT = "115792089237316195423570985008687907853269984665640564039457584007913129639934";
 const BigNumber = require("bignumber.js");
@@ -21,6 +22,10 @@ const Dodohelper = require("./helpers/dodohelper.js");
 const Util = require("./helpers/utils/util.js");
 
 const uniswapv3_fee = 3000;
+const gwei = 30;
+const ethPrice = 2000;
+
+
 
 function bitAt(num, pos) {
     return (num >> pos) & 1;
@@ -78,7 +83,7 @@ function findBestDistributionWithBigNumber(s, amounts) {
         distribution[curExchange] = partsLeft - parent[curExchange][partsLeft];
         partsLeft = parent[curExchange][partsLeft];
     }
-    const returnAmount = answer[n - 1][s] == new BigNumber(-1e72) ? 0 : answer[n - 1][s];
+    const returnAmount = answer[n - 1][s] == new BigNumber(-1e72) ? new BigNumber(0) : answer[n - 1][s];
 
     return { returnAmount, distribution };
 }
@@ -89,12 +94,25 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
         srcToken = ADDRESS.WETH;
     }
 
-    const outputDecimals = destToken === ADDRESS.ETH ? 18 : await Util.getDecimals(destToken, signer);
+    let queries = [];
+    queries.push(srcToken === ADDRESS.ETH ? 18 : await Util.getDecimals(srcToken, signer));
+    queries.push(destToken === ADDRESS.ETH ? 18 : await Util.getDecimals(destToken, signer));
+    queries.push(srcToken === ADDRESS.ETH ? "ETH" : await Util.getSymbol(srcToken, signer));
+    queries.push(destToken === ADDRESS.ETH ? "ETH" : await Util.getSymbol(destToken, signer));
+    let start = new Date().getTime();
+    const baseResults = await Promise.all(queries);
+    let end = new Date().getTime();
+    console.log("get decimals and symbol time: " + (end - start) + "ms");
+    const inputDecimals = baseResults[0];
+    const outputDecimals = baseResults[1];
+    const inputSymbol = baseResults[2];
+    const outputSymbol = baseResults[3];
 
+    
+    queries = [];
     const swaps = [
-        { name: "FxSwap", price: bestPath.returnAmount / inputAmounts, youGet: bestPath.returnAmount / Math.pow(10, outputDecimals), fees: 8.88 }
+        { name: "FxSwap", price: bestPath.returnAmount.dividedBy(inputAmounts), youGet: bestPath.returnAmount.dividedBy(Math.pow(10, outputDecimals)), fees: 8.88 }
     ];
-    const queries = [];
     const UniswapV2Factories = [ADDRESS.SushiswapFactory, ADDRESS.ShibaswapFactory, ADDRESS.UniswapV2Factory];  // 都是基于uni的v2协议 
     let uniswapv2helper = new Uniswapv2helper();
     for (let i = 0; i < UniswapV2Factories.length; i++) {
@@ -124,8 +142,9 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
     }
 
     const name_string = ["Sushiswap", "Shibaswap", "UniswapV2", "UniswapV3", "AaveV2", "Dodo"];
+    const gas = [120000,120000,120000,150000,250000,300000];
     for (let i = 0; i < name_string.length; i++) {
-        swaps.push({ name: name_string[i], price: matrix[i][1] / inputAmounts, youGet: matrix[i][1] / Math.pow(10, outputDecimals), fees: 8.88 });
+        swaps.push({ name: name_string[i], price: matrix[i][1] / inputAmounts, youGet: matrix[i][1] / Math.pow(10, outputDecimals), fees: (new BigNumber(gas[i])).multipliedBy(gwei * 10 **9).multipliedBy(ethPrice).dividedBy(10 **18).toString() });
     }
 
 
@@ -152,14 +171,35 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
         paths[0].push(tmp);
     }
 
+    const estimated_gas_list = [170000,170000,170000,205000,467688,240000];
+    let estimated_gas_total = 0;
+    // 遍历paths[0]
+    for (let i = 0; i < paths[0].length; i++) {
+        for (let j = 0; j < paths[0][i].length; j++) {
+            const inx = name_string.indexOf(paths[0][i][j].name);
+            if(inx === -1){ //name_string无法匹配
+                continue;
+            } 
+            estimated_gas_total += estimated_gas_list[inx];
+        }
+    }
+    swaps[0].fees = (new BigNumber(estimated_gas_total)).multipliedBy(gwei * 10 **9).multipliedBy(ethPrice).dividedBy(10 **18).toString(); //更新FxSwap的手续费
+
+    // 计算价格冲击
+    const inputPrice = await getPrice(inputSymbol, (new BigNumber(inputAmounts)).dividedBy(10**inputDecimals).toString(), signer);
+    const outputPrice = await getPrice(outputSymbol, bestPath.returnAmount.dividedBy(10**outputDecimals).toString(), signer);
+    const price_impact = (inputPrice.minus(outputPrice)).dividedBy(inputPrice).multipliedBy(100).toFixed(2);
 
     const result = {
         source_token: srcToken,
         target_token: destToken,
         source_token_amount: inputAmounts,
-        target_token_amount: bestPath.returnAmount,
+        target_token_amount: bestPath.returnAmount.toString(),
+        inputDecimals: inputDecimals,
+        outputDecimals: outputDecimals,
         paths: paths,
         swaps: swaps,
+        price_impact: price_impact,
     }
 
 
@@ -360,7 +400,7 @@ async function routerPath(srcToken, destToken, inputAmounts, part, flag, depth) 
         for (let i = 0; i < queryResults[maxIndex].paths.length; i++) {
             paths.push(queryResults[maxIndex].paths[i]);
         }
-        returnAmount = queryResults[maxIndex].returnAmount;
+        returnAmount = new BigNumber(queryResults[maxIndex].returnAmount);
     }
 
     // 特殊token的转换，例如aave和compound
@@ -428,6 +468,14 @@ async function _queryBetweenInputAndOutputWithMiddle(srcToken, middle, destToken
 
 }
 
+async function getPrice(token, amount){
+    const result = await axios.get('https://service.price.dxpool.com:3001/price',{      
+    params: {
+        symbol : token
+    }          
+    });
+    return new BigNumber(amount).multipliedBy(result.data.data.price.CNY[token])
+}
 
 app.get("/", (req, res) => {
     res.send("Hello FxSwap!");
@@ -440,21 +488,30 @@ app.get("/quote", async (req, res) => {
         const srcToken = req.query.source_token;  // 源token
         const destToken = req.query.target_token;  // 目标token
         const inputAmounts = req.query.amount; // 源token数量
-        const part = req.query.part;    // 分成几份进行计算
+        const part = Number(req.query.part)>50?50:Number(req.query.part);    // 分成几份进行计算
         const slippage = isNaN(Number(req.query.slippage)) ? 5 : Number(req.query.slippage); // 滑点
         const senderAddress = req.query.sender_address; // 用户地址
         const receiverAddress = req.query.receiver_address;
         const depth = isNaN(Number(req.query.depth)) ? 1 : Number(req.query.depth); // 搜索深度
         const flag = isNaN(Number(req.query.flag)) ? 2 ** 52 - 1 : Number(req.query.flag); // dex筛选位
 
-        const uniswapGas = 150000; // uniswap 估计gas
-        const ETHprice = 2000; // 假设2000usd
+
 
 
         let result = {};
-        let bestPath = await routerPath(srcToken, destToken, inputAmounts, part, flag, depth);  //  depth代表除头尾的特殊转换（aave和compound）中间的遍历深度， 例如 adai => dai => usdt => usdc =>audc， depth=2
+
+        let start = new Date().getTime();
+        const bestPaths = await Promise.all([routerPath(srcToken, destToken, inputAmounts, part, flag, 1),routerPath(srcToken, destToken, inputAmounts, part, flag, 2)]);//  depth代表除头尾的特殊转换（aave和compound）中间的遍历深度， 例如 adai => dai => usdt => usdc =>audc， depth=2
+        let bestPath =  bestPaths[0].returnAmount.isGreaterThan(bestPaths[1].returnAmount)? bestPaths[0]: bestPaths[1];
+        let end = new Date().getTime();
+        console.log("寻找路径耗时: " + (end - start) + "ms");
+
 
         let display = await getDisplayInformation(srcToken, destToken, inputAmounts, bestPath);
+        let end2 = new Date().getTime();
+        console.log("获取展示信息耗时: " + (end2 - end) + "ms");
+
+
         const minimumReceived = (new BigNumber(display.swaps[0].youGet.toFixed(6))).multipliedBy(1000 - slippage).dividedBy(1000);
         result.source_token = srcToken;
         result.target_token = destToken;
@@ -463,10 +520,10 @@ app.get("/quote", async (req, res) => {
         result.swaps = display.swaps;
         result.paths = display.paths;
         result.minimumReceived = minimumReceived.toString();
-        result.estimate_gas = 8888888;
+        result.estimate_gas = -1;
         result.estimate_cost = 9.99;
-        result.minimum_reception = 1000;
-        result.price_impact = 10.99;
+        result.minimum_reception = minimumReceived.dividedBy(10 ** display.outputDecimals);
+        result.price_impact = display.price_impact;
 
         const paths = [];
         for (let i = 0; i < bestPath.paths.length; i++) {
@@ -489,18 +546,18 @@ app.get("/quote", async (req, res) => {
             minimumReceived.toFixed(0)
         ]
         );
-
         result.tx_data = txData;
 
         res.send(result);
 
     } catch (err) {
+        console.log(err);
         res.send(err);
     }
 
 
     const end = new Date().getTime();
-    console.log("耗时: " + (end - start) + "ms");
+    console.log("总耗时: " + (end - start) + "ms");
 
 });
 

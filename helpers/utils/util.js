@@ -12,7 +12,11 @@ class Util {
         return decimal;
     }
 
-
+    static async getSymbol(token,signer) {
+        const erc20 = new ethers.Contract(token, IERC20, signer);
+        const symbol = await erc20.symbol();
+        return symbol;
+    }
 
 }
 

@@ -20,25 +20,25 @@ describe('backend', () => {
   //   console.log(await aavehelper.getOutputByExactInput(ADDRESS.DAI,ADDRESS.ADAI,1000000000000000000,null,50,signer));
   // });
 
-  // it('should get quote from uniswapv2helper', async () => {
-  //   const uniswapV2helper = new UniswapV2helper();
-  //   console.log(await uniswapV2helper.getOutputByExactInput(ADDRESS.DAI,ADDRESS.USDT,1000000000000000000,ADDRESS.UniswapV2Factory,50,signer));
-  // });
+  it('should get quote from uniswapv2helper', async () => {
+    const uniswapV2helper = new UniswapV2helper();
+    console.log(await uniswapV2helper.getOutputByExactInput(ADDRESS.DAI,ADDRESS.USDT,1000000000000000000,ADDRESS.VERSE_FACTORY,50,signer));
+  });
 
   // it('should get quote from uniswapv3helper', async () => {
   //   const uniswapV3helper = new UniswapV3helper();
-  //   console.log(await uniswapV3helper.getOutputByExactInput(ADDRESS.DAI,ADDRESS.USDT,1000000000000000000,3000,ADDRESS.V3QUOTE_V2,50,signer));
+  //   console.log(await uniswapV3helper.getOutputByExactInput(ADDRESS.USDT,ADDRESS.USDC,"10000000000000",100,ADDRESS.V3QUOTE_V2,1,signer));
   // });
 
-  it('should get quote from Dodohelper', async () => {
-    const dodohelper = new Dodohelper();
-    //console.log(await dodohelper.getOutputByExactInput(ADDRESS.DAI,ADDRESS.USDT,"1000000000000000000",null,50,signer)); //1个DAI => USDT
-    //console.log(await dodohelper.getOutputByExactInput(ADDRESS.USDT,ADDRESS.DAI,"1000000",null,50,signer)); //1个USDT => DAI
-    //console.log(await dodohelper.getOutputByExactInput(ADDRESS.USDT,ADDRESS.USDC,"1000000",null,50,signer)); //1个USDT => USDC
-    //console.log(await dodohelper.getOutputByExactInput(ADDRESS.WETH,ADDRESS.USDT,"1000000000000000000",null,10,signer)); //1个WETH => USDT
-    //console.log(await dodohelper.tokenInfo(ADDRESS.WETH,ADDRESS.USDT,signer));
+  // it('should get quote from Dodohelper', async () => {
+  //   const dodohelper = new Dodohelper();
+  //   //console.log(await dodohelper.getOutputByExactInput(ADDRESS.DAI,ADDRESS.USDT,"1000000000000000000",null,50,signer)); //1个DAI => USDT
+  //   //console.log(await dodohelper.getOutputByExactInput(ADDRESS.USDT,ADDRESS.DAI,"1000000",null,50,signer)); //1个USDT => DAI
+  //   //console.log(await dodohelper.getOutputByExactInput(ADDRESS.USDT,ADDRESS.USDC,"1000000",null,50,signer)); //1个USDT => USDC
+  //   //console.log(await dodohelper.getOutputByExactInput(ADDRESS.WETH,ADDRESS.USDT,"1000000000000000000",null,10,signer)); //1个WETH => USDT
+  //   //console.log(await dodohelper.tokenInfo(ADDRESS.WETH,ADDRESS.USDT,signer));
 
-    console.log(await dodohelper.getOutputByExactInput(ADDRESS.ADAI,ADDRESS.AUSDC,"100000000",null,10,signer)); //1个WETH => USDT
-  });
+  //   console.log(await dodohelper.getOutputByExactInput(ADDRESS.ADAI,ADDRESS.AUSDC,"100000000",null,10,signer)); //1个WETH => USDT
+  // });
 
 });

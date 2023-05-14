@@ -31,7 +31,7 @@ async function test(){
 async function test2(){ //  1 ETH => USDT
     // 先node start.js启动服务
     
-    const result = await axios.get('http://127.0.0.1:3000/quote',{       //如果是测试网，改成http://8.212.8.124:8546/quote   
+    const result = await axios.get('http://localhost:3000/quote',{       //如果是测试网，改成http://8.212.8.124:8546/quote   
             params: {
                 source_token: ADDRESS.ETH,
                 target_token: ADDRESS.USDT,
@@ -72,7 +72,7 @@ async function test2(){ //  1 ETH => USDT
 async function test3(){ //  100 USDT => ETH
     // 先node start.js启动服务
 
-    const result = await axios.get('http://127.0.0.1:3000/quote',{        
+    const result = await axios.get('http://localhost:3000/quote',{        
             params: {
                 source_token: ADDRESS.USDT,
                 target_token: ADDRESS.ETH,
@@ -109,7 +109,7 @@ async function test3(){ //  100 USDT => ETH
 async function test4(){ //  1 USDT => DAI
     // 先node start.js启动服务
 
-    const result = await axios.get('http://127.0.0.1:3000/quote',{        
+    const result = await axios.get('http://localhost:3000/quote',{        
             params: {
                 source_token: ADDRESS.USDT,
                 target_token: ADDRESS.DAI,

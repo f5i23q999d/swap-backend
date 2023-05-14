@@ -2,3 +2,13 @@
 
 
 http://localhost:3000/quote?source_token=0xdAC17F958D2ee523a2206206994597C13D831ec7&target_token=0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48&amount=1000000&part=20&slippage=5&address=0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1&&depth=1
+
+
+
+http://8.212.8.124:8546/quote?source_token=0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE&target_token=0x6B175474E89094C44Da98b954EedeAC495271d0F&amount=10000000000000000000&part=50&slippage=5&address=0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1&&depth=1
+
+ADAI -> AUSDC
+http://127.0.0.1:3000/quote?source_token=0x028171bCA77440897B824Ca71D1c56caC55b68A3&target_token=0xBcca60bB61934080951369a648Fb03DF4F96263C&amount=1000000000000000000&part=50&slippage=5&address=0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1&&depth=2
+
+ETH -> AUSDC
+http://127.0.0.1:3000/quote?source_token=0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE&target_token=0xBcca60bB61934080951369a648Fb03DF4F96263C&amount=1000000000000000000&part=50&slippage=5&address=0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1&&depth=2
