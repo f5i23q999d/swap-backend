@@ -2,6 +2,7 @@ const express = require("express");
 const { ethers } = require("ethers");
 const app = express();
 const config = require("./config.js");
+const Cache = require('./helpers/utils/cache.js');
 const port = config.port;
 const provider = new ethers.providers.JsonRpcProvider(config.rpc);
 const wallet = new ethers.Wallet(
@@ -25,7 +26,7 @@ const uniswapv3_fee = 3000;
 const gwei = 30;
 const ethPrice = 2000;
 
-
+const cache = new Cache(5);
 
 function bitAt(num, pos) {
     return (num >> pos) & 1;
@@ -95,14 +96,14 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
     }
 
     let queries = [];
-    queries.push(srcToken === ADDRESS.ETH ? 18 : await Util.getDecimals(srcToken, signer));
-    queries.push(destToken === ADDRESS.ETH ? 18 : await Util.getDecimals(destToken, signer));
-    queries.push(srcToken === ADDRESS.ETH ? "ETH" : await Util.getSymbol(srcToken, signer));
-    queries.push(destToken === ADDRESS.ETH ? "ETH" : await Util.getSymbol(destToken, signer));
+    queries.push(srcToken === ADDRESS.ETH ? 18 :  Util.getDecimals(srcToken, signer));
+    queries.push(destToken === ADDRESS.ETH ? 18 :  Util.getDecimals(destToken, signer));
+    queries.push(srcToken === ADDRESS.ETH ? "ETH" :  Util.getSymbol(srcToken, signer));
+    queries.push(destToken === ADDRESS.ETH ? "ETH" :  Util.getSymbol(destToken, signer));
     let start = new Date().getTime();
     const baseResults = await Promise.all(queries);
     let end = new Date().getTime();
-    console.log("get decimals and symbol time: " + (end - start) + "ms");
+    console.log("base time: " + (end - start) + "ms");
     const inputDecimals = baseResults[0];
     const outputDecimals = baseResults[1];
     const inputSymbol = baseResults[2];
@@ -136,7 +137,10 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
     queries.push(dodohelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, 1, signer));
 
     let matrix = [];
+    start = new Date().getTime();
     const partResults = await Promise.all(queries);
+    end = new Date().getTime();
+    console.log("display time: " + (end - start) + "ms");
     for (let i = 0; i < partResults.length; i++) {
         matrix.push(partResults[i]);
     }
@@ -186,9 +190,16 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
     swaps[0].fees = (new BigNumber(estimated_gas_total)).multipliedBy(gwei * 10 **9).multipliedBy(ethPrice).dividedBy(10 **18).toString(); //更新FxSwap的手续费
 
     // 计算价格冲击
-    const inputPrice = await getPrice(inputSymbol, (new BigNumber(inputAmounts)).dividedBy(10**inputDecimals).toString(), signer);
-    const outputPrice = await getPrice(outputSymbol, bestPath.returnAmount.dividedBy(10**outputDecimals).toString(), signer);
-    const price_impact = (inputPrice.minus(outputPrice)).dividedBy(inputPrice).multipliedBy(100).toFixed(2);
+    start = new Date().getTime();
+    const inputPrice =  getPrice(inputSymbol, (new BigNumber(inputAmounts)).dividedBy(10**inputDecimals).toString(), signer);
+    const outputPrice =  getPrice(outputSymbol, bestPath.returnAmount.dividedBy(10**outputDecimals).toString(), signer);
+    const price_impact_queries = [];
+    price_impact_queries.push(inputPrice);
+    price_impact_queries.push(outputPrice);
+    const price_impact_result = await Promise.all(price_impact_queries);
+    const price_impact = (price_impact_result[0].minus(price_impact_result[1])).dividedBy(price_impact_result[0]).multipliedBy(100).toFixed(2);
+    end = new Date().getTime();
+    console.log("price_impact: " + (end - start) + "ms");
 
     const result = {
         source_token: srcToken,
@@ -469,12 +480,16 @@ async function _queryBetweenInputAndOutputWithMiddle(srcToken, middle, destToken
 }
 
 async function getPrice(token, amount){
+    try{
     const result = await axios.get('https://service.price.dxpool.com:3001/price',{      
     params: {
         symbol : token
     }          
     });
     return new BigNumber(amount).multipliedBy(result.data.data.price.CNY[token])
+    } catch(err){
+        return new BigNumber(0)
+    }
 }
 
 app.get("/", (req, res) => {
@@ -496,7 +511,8 @@ app.get("/quote", async (req, res) => {
         const flag = isNaN(Number(req.query.flag)) ? 2 ** 52 - 1 : Number(req.query.flag); // dex筛选位
 
 
-
+        const data = cache.get(`quote:${srcToken}:${destToken}:${inputAmounts}:${part}:${slippage}:${senderAddress}:${receiverAddress}:${depth}:${flag}`);
+        if (data)  { res.send(data); console.log("命中缓存");return;};
 
         let result = {};
 
@@ -521,7 +537,7 @@ app.get("/quote", async (req, res) => {
         result.paths = display.paths;
         result.minimumReceived = minimumReceived.toString();
         result.estimate_gas = -1;
-        result.estimate_cost = 9.99;
+        result.estimate_cost = display.swaps[0].fees;
         result.minimum_reception = minimumReceived.dividedBy(10 ** display.outputDecimals);
         result.price_impact = display.price_impact;
 
@@ -549,7 +565,7 @@ app.get("/quote", async (req, res) => {
         result.tx_data = txData;
 
         res.send(result);
-
+        cache.set(`quote:${srcToken}:${destToken}:${inputAmounts}:${part}:${slippage}:${senderAddress}:${receiverAddress}:${depth}:${flag}`,result);
     } catch (err) {
         console.log(err);
         res.send(err);

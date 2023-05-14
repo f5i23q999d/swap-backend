@@ -144,4 +144,43 @@ async function test4(){ //  1 USDT => DAI
 }
 
 
+async function test5(){ //  1 ETH => PEPE
+    // 先node start.js启动服务
+    
+    const result = await axios.get('http://localhost:3000/quote',{       //如果是测试网，改成http://8.212.8.124:8546/quote   
+            params: {
+                source_token: ADDRESS.ETH,
+                target_token: ADDRESS.PEPE,
+                amount: String(1e18),
+                part: 10,
+                slippage: 10,   // 1-500 ->0.1%->50%
+                address: ADDRESS.WALLET,
+                receiver_address: ADDRESS.WALLET,
+                depth: 1
+            }          
+    });
+
+
+    const PEPE = new ethers.Contract(ADDRESS.PEPE, ERC20ABI, wallet);
+
+    const defaultAddress = wallet.address;
+	console.log('Before ETH balance:	', (await wallet.getBalance())/1e18);
+	console.log('Before USDT balance:	', (await PEPE.balanceOf(defaultAddress))/1e18);
+
+    const tx = {
+        to : config.FXSWAP_ADDRESS,
+        data : result.data.tx_data,
+       value : ethers.utils.parseEther("1.0")
+    };    
+    console.log(await wallet.sendTransaction(tx));
+
+    
+
+
+    console.log('After ETH balance:	', (await wallet.getBalance())/1e18);
+	console.log('After PEPE balance:	', (await PEPE.balanceOf(defaultAddress))/1e18);
+
+    return;
+}
+
  test2()
