@@ -89,30 +89,6 @@ function findBestDistributionWithBigNumber(s, amounts) {
     return { returnAmount, distribution };
 }
 
-async function getHistoricalData(tokenId, currency, days, part) {
-    const url = `https://api.coingecko.com/api/v3/coins/${tokenId}/market_chart?vs_currency=${currency}&days=${days}`;
-    const response = await axios.get(url);
-    const data = response.data.prices;
-  
-    // 等比例抽样
-    const sampleSize = Math.floor(data.length / part);
-    const sampleIndexes = [];
-    for (let i = 0; i < part; i++) {
-      const index = Math.floor(i * sampleSize);
-      sampleIndexes.push(index);
-    }
-  
-    // 返回抽样结果
-    const historicalData = sampleIndexes.map((index) => {
-      const d = data[index];
-      return {
-        timestamp: d[0],
-        price: d[1]
-      };
-    });
-  
-    return historicalData;
-}
 
 
 async function getChart(token1, token2, days, part, currency) {
@@ -122,24 +98,46 @@ async function getChart(token1, token2, days, part, currency) {
     if(token2===ADDRESS.ETH){
         token2=ADDRESS.WETH
     }
-    const url1 = `https://api.coingecko.com/api/v3/coins/ethereum/contract/${token1}`;   
-    const response1 = await axios.get(url1);
-    const token1Id = response1.data.id;      // 获取token1的id
-    const historicalData1 = await getHistoricalData(token1Id, "usd", days, part);
-    //console.log(historicalData1);
-    const url2 = `https://api.coingecko.com/api/v3/coins/ethereum/contract/${token2}`;
-    const response2 = await axios.get(url2);
-    const token2Id = response2.data.id;      // 获取token2的id
-    const historicalData2 = await getHistoricalData(token2Id, "usd", days, part);
-    //console.log(historicalData2);
-    const result = [];
-    for (let i = 0; i < part; i++) {
-        result.push({
-            timestamp: historicalData1[i].timestamp,
-            price: historicalData1[i].price / historicalData2[i].price
+
+    const symbol1 = await Util.getSymbol(token1,signer);
+    const symbol2 = await Util.getSymbol(token2,signer);
+    const api_key = config.cryptocompare_apikey;
+    let limit;
+    let url;
+
+    if (days === 0.5) {
+        limit = 12;
+        url = `https://min-api.cryptocompare.com/data/v2/histohour?fsym=${symbol1}&tsym=${symbol2}&aggregate=1&limit=${limit}&api_key=${api_key}`;
+    } else if (days === 1) {
+        limit = 24;
+        url = `https://min-api.cryptocompare.com/data/v2/histohour?fsym=${symbol1}&tsym=${symbol2}&aggregate=1&limit=${limit}&api_key=${api_key}`;
+    } else if (days === 3) {
+        limit = 72;
+        url = `https://min-api.cryptocompare.com/data/v2/histohour?fsym=${symbol1}&tsym=${symbol2}&aggregate=1&limit=${limit}&api_key=${api_key}`;
+    } else if (days === 7) {
+        limit = 7;
+        url = `https://min-api.cryptocompare.com/data/v2/histoday?fsym=${symbol1}&tsym=${symbol2}&aggregate=1&limit=${limit}&api_key=${api_key}`;
+    } else if (days === 30) {
+        limit = 30;
+        url = `https://min-api.cryptocompare.com/data/v2/histoday?fsym=${symbol1}&tsym=${symbol2}&aggregate=1&limit=${limit}&api_key=${api_key}`;
+    }
+
+    const response = await axios.get(url);
+    const data = response.data.Data.Data;
+    
+    let result = {};
+    result.chart = [];
+    for (let i = 0; i < data.length; i++) {
+        result.chart.push({
+            timestamp: data[i].time,
+            price: data[i].close
         });
     }
+
+    const diff = (data[data.length-1].close - data[0].close) / data[0].close * 100;
+    result.diff = diff.toFixed(2);
     return result;
+
 }
 
 
@@ -645,10 +643,11 @@ app.get("/chart", async (req, res) => {
         const srcToken = req.query.source_token;  // 源token
         const destToken = req.query.target_token;  // 目标token       
         const part = Number(req.query.part)>100?100:Number(req.query.part);    // 分成几份进行计算
-        const days = Number(req.query.days)>365?365:Number(req.query.days);    // 分成几份进行计算
-        const currency = "USD";
-        const reuslt = await getChart(srcToken,destToken,days,part,currency);
-        res.send(reuslt);
+        const days = isNaN(Number(req.query.days))?30:Number(req.query.days);    // 分成几份进行计算
+        const currency = "USD";  
+        const result = await getChart(srcToken,destToken,days,part,currency);
+        
+        res.send(result);
 
     }
     catch(err){
