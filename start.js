@@ -89,6 +89,60 @@ function findBestDistributionWithBigNumber(s, amounts) {
     return { returnAmount, distribution };
 }
 
+async function getHistoricalData(tokenId, currency, days, part) {
+    const url = `https://api.coingecko.com/api/v3/coins/${tokenId}/market_chart?vs_currency=${currency}&days=${days}`;
+    const response = await axios.get(url);
+    const data = response.data.prices;
+  
+    // 等比例抽样
+    const sampleSize = Math.floor(data.length / part);
+    const sampleIndexes = [];
+    for (let i = 0; i < part; i++) {
+      const index = Math.floor(i * sampleSize);
+      sampleIndexes.push(index);
+    }
+  
+    // 返回抽样结果
+    const historicalData = sampleIndexes.map((index) => {
+      const d = data[index];
+      return {
+        timestamp: d[0],
+        price: d[1]
+      };
+    });
+  
+    return historicalData;
+}
+
+
+async function getChart(token1, token2, days, part, currency) {
+    if(token1===ADDRESS.ETH){
+        token1=ADDRESS.WETH
+    }
+    if(token2===ADDRESS.ETH){
+        token2=ADDRESS.WETH
+    }
+    const url1 = `https://api.coingecko.com/api/v3/coins/ethereum/contract/${token1}`;   
+    const response1 = await axios.get(url1);
+    const token1Id = response1.data.id;      // 获取token1的id
+    const historicalData1 = await getHistoricalData(token1Id, "usd", days, part);
+    //console.log(historicalData1);
+    const url2 = `https://api.coingecko.com/api/v3/coins/ethereum/contract/${token2}`;
+    const response2 = await axios.get(url2);
+    const token2Id = response2.data.id;      // 获取token2的id
+    const historicalData2 = await getHistoricalData(token2Id, "usd", days, part);
+    //console.log(historicalData2);
+    const result = [];
+    for (let i = 0; i < part; i++) {
+        result.push({
+            timestamp: historicalData1[i].timestamp,
+            price: historicalData1[i].price / historicalData2[i].price
+        });
+    }
+    return result;
+}
+
+
 async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath) {
     // 返回给前端的显示信息
     if (srcToken === ADDRESS.ETH) {
@@ -580,6 +634,31 @@ app.get("/quote", async (req, res) => {
 
     const end = new Date().getTime();
     console.log("总耗时: " + (end - start) + "ms");
+
+});
+
+
+app.get("/chart", async (req, res) => {
+    const start = new Date().getTime();
+
+    try {
+        const srcToken = req.query.source_token;  // 源token
+        const destToken = req.query.target_token;  // 目标token       
+        const part = Number(req.query.part)>100?100:Number(req.query.part);    // 分成几份进行计算
+        const days = Number(req.query.days)>365?365:Number(req.query.days);    // 分成几份进行计算
+        const currency = "USD";
+        const reuslt = await getChart(srcToken,destToken,days,part,currency);
+        res.send(reuslt);
+
+    }
+    catch(err){
+        console.log(err);
+        res.send(err);
+    }
+
+
+    const end = new Date().getTime();
+    console.log("图标总耗时: " + (end - start) + "ms");
 
 });
 
