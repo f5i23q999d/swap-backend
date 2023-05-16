@@ -29,6 +29,8 @@ const ethPrice = 2000;
 
 const cache = new Cache(5);
 
+app.use(cors());
+
 function bitAt(num, pos) {
     return (num >> pos) & 1;
 }
@@ -662,7 +664,6 @@ app.get("/chart", async (req, res) => {
 
 });
 
-app.use(cors());
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`);
