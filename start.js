@@ -1,6 +1,7 @@
 const express = require("express");
 const { ethers } = require("ethers");
 const app = express();
+const cors = require('cors');
 const config = require("./config.js");
 const Cache = require('./helpers/utils/cache.js');
 const port = config.port;
@@ -660,6 +661,8 @@ app.get("/chart", async (req, res) => {
     console.log("图标总耗时: " + (end - start) + "ms");
 
 });
+
+app.use(cors());
 
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`);
