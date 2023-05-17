@@ -668,3 +668,18 @@ app.get("/chart", async (req, res) => {
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`);
 });
+
+var fs = require('fs')
+try{
+var privateKey = fs.readFileSync('./https/privkey.pem', 'utf8')
+var certificate = fs.readFileSync('./https/cert.pem', 'utf8')
+var credentials = { key: privateKey, cert: certificate }
+var SSLPORT = 8546
+var https = require('https')
+var httpsServer = https.createServer(credentials, app)
+httpsServer.listen(SSLPORT, function () {
+    console.log('HTTPS Server is running on: https://localhost:%s', SSLPORT)
+})
+} catch(err){
+    console.log(err);
+}
