@@ -8,6 +8,7 @@ module.exports = {
     "uniswapV3Handler_ADDRESS": "0xbA3981771AB991960028B2F83ae83664Fd003F61",
     "aaveV2Handler_ADDRESS": "0xF39FEF928BECF01F045FD609eb44C838ea37325b",
     "dodoHandler_ADDRESS": "0x4635a010Be2707a3FB9c3467Fc615202468BC51E",
+    "compoundHandler_ADDRESS": "xxx",
     "cryptocompare_apikey": "59c26f78f012b6351d94b1000f25e6ad9093c963856d3c8fcd34f10860792a2f"
 
 }

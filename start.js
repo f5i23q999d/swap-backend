@@ -21,6 +21,7 @@ const Aavehelper = require("./helpers/aavehelper.js");
 const Uniswapv3helper = require("./helpers/uniswapv3helper.js");
 const Uniswapv2helper = require("./helpers/uniswapv2helper.js");
 const Dodohelper = require("./helpers/dodohelper.js");
+const Compoundhelper = require("./helpers/compoundhelper.js");
 const Util = require("./helpers/utils/util.js");
 
 const uniswapv3_fee = 3000;
@@ -190,6 +191,9 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
 
     const dodohelper = new Dodohelper();
     queries.push(dodohelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, 1, signer));
+
+    const compoundhelper = new Compoundhelper();
+    queries.push(compoundhelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, 1, signer));
 
     let matrix = [];
     start = new Date().getTime();
@@ -361,6 +365,19 @@ async function buildTrades(paths) {
                 }
             )
         }
+        if (_distribution[6] > 0) { // compound
+            distribution.push(_distribution[6]);
+            const compoundhelper = new Compoundhelper();
+            const encodedPayload = abiEncoder.encode(["address", "address", "uint256", "uint256"],
+                [sourceToken, destinationToken, amount, compoundhelper.isCToken(sourceToken) ? 1 : 2]
+            )
+            orders.push(
+                {
+                    "exchangeHandler": config.compoundHandler_ADDRESS, // orders经由部署 compoundHandler 合约进行处理
+                    "encodedPayload": encodedPayload
+                }
+            )
+        }
         const trade = {
             sourceToken,
             destinationToken,
@@ -377,7 +394,7 @@ async function buildTrades(paths) {
 
 
 async function routerPath(srcToken, destToken, inputAmounts, part, flag, depth) {
-    // dex顺序 [sushiswap,shibaswap,uniswapv2,uniswapv3,aave,dodo]
+    // dex顺序 [sushiswap,shibaswap,uniswapv2,uniswapv3,aave,dodo，compound]
 
     const paths = [];
 
@@ -391,7 +408,15 @@ async function routerPath(srcToken, destToken, inputAmounts, part, flag, depth) 
         paths.push({ returnAmount: inputAmounts, path: [srcToken, UNDERLYING_ASSET_ADDRESS, inputAmounts, [0, 0, 0, 0, 1, 0], 1] }); // 最后的1代表aave的deposit
         srcToken = UNDERLYING_ASSET_ADDRESS;
     }
-    // if (compoundhelper.isCToken(srcToken))  如果源token是ctoken
+    const compoundhelper = new Compoundhelper();
+    if (compoundhelper.isCToken(srcToken)) {   // 如果源token是ctoken
+        if (bitAt(flag, 6) == 0) {
+            return { returnAmount: 0, distribution: [0, 0, 0, 0, 0, 0, 0], paths: [] };
+        }
+        const UNDERLYING_ASSET_ADDRESS = compoundhelper.getUnderlyingToken(srcToken);
+        paths.push({ returnAmount: inputAmounts, path: [srcToken, UNDERLYING_ASSET_ADDRESS, inputAmounts, [0, 0, 0, 0, 0, 0, 1], 1] });
+        srcToken = UNDERLYING_ASSET_ADDRESS;
+    }
     inputAmounts = inputAmounts; //第一层转换后更新inputAmounts
 
     let tmp = destToken;
@@ -498,6 +523,7 @@ async function _queryBetweenInputAndOutput(srcToken, destToken, inputAmounts, pa
     let uniswapv2helper = new Uniswapv2helper();
     const uniswapv3helper = new Uniswapv3helper();
     const dodohelper = new Dodohelper();
+    const compoundhelper = new Compoundhelper();
     const queries = []; // 查询队列
     bitAt(flag, 0) == 1 ? queries.push(uniswapv2helper.getOutputByExactInput(srcToken, destToken, inputAmounts, ADDRESS.SushiswapFactory, part, signer)) : queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
     bitAt(flag, 1) == 1 ? queries.push(uniswapv2helper.getOutputByExactInput(srcToken, destToken, inputAmounts, ADDRESS.ShibaswapFactory, part, signer)) : queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
@@ -505,6 +531,7 @@ async function _queryBetweenInputAndOutput(srcToken, destToken, inputAmounts, pa
     bitAt(flag, 3) == 1 ? queries.push(uniswapv3helper.getOutputByExactInput(srcToken, destToken, inputAmounts, uniswapv3_fee, ADDRESS.V3QUOTE_V2, part, signer)) : queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
     bitAt(flag, 4) == 1 ? queries.push(aavehelper.getOutputByExactInput(srcToken, destToken, inputAmounts, ADDRESS.AAVEPOOLV2, part, signer)) : queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
     bitAt(flag, 5) == 1 ? queries.push(dodohelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, part, signer)) : queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
+    bitAt(flag, 6) == 1 ? queries.push(compoundhelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, part, signer)) : queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
     let matrix = [];
     let partResults = await Promise.all(queries);
     for (let i = 0; i < partResults.length; i++) {
