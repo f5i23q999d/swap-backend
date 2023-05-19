@@ -184,7 +184,9 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
     
     queries = [];
     const swaps = [
-        { name: "FxSwap", price: bestPath.returnAmount.dividedBy(inputAmounts), youGet: bestPath.returnAmount.dividedBy(Math.pow(10, outputDecimals)), fees: 8.88 }
+        { name: "FxSwap", price: bestPath.returnAmount.dividedBy(10 ** outputDecimals).dividedBy(
+            ((new BigNumber(inputAmounts)).dividedBy(10 ** inputDecimals))
+        ), youGet: bestPath.returnAmount.dividedBy(Math.pow(10, outputDecimals)), fees: 8.88 }
     ];
     const UniswapV2Factories = [ADDRESS.SushiswapFactory, ADDRESS.ShibaswapFactory, ADDRESS.UniswapV2Factory];  // 都是基于uni的v2协议 
     let uniswapv2helper = new Uniswapv2helper();
@@ -223,7 +225,7 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
     const name_string = ["Sushiswap", "Shibaswap", "UniswapV2", "UniswapV3", "AaveV2", "Dodo"];
     const gas = [120000,120000,120000,150000,250000,300000];
     for (let i = 0; i < name_string.length; i++) {
-        swaps.push({ name: name_string[i], price: matrix[i][1] / inputAmounts, youGet: matrix[i][1] / Math.pow(10, outputDecimals), fees: (new BigNumber(gas[i])).multipliedBy(gwei * 10 **9).multipliedBy(ethPrice).dividedBy(10 **18).toString() });
+        swaps.push({ name: name_string[i], price: (matrix[i][1] / Math.pow(10, outputDecimals)) / (inputAmounts / Math.pow(10, inputDecimals)), youGet: matrix[i][1] / Math.pow(10, outputDecimals), fees: (new BigNumber(gas[i])).multipliedBy(gwei * 10 **9).multipliedBy(ethPrice).dividedBy(10 **18).toString() });
     }
 
 
