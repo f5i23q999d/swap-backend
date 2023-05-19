@@ -28,6 +28,7 @@ paths                     array                    描述交换路由路径
 estimate_gas              integer                  预估的gas数量
 estimate_cost             number                   预估的上链手续费
 swaps                     array                    各个swap的展示信息
+reception                 number                   返回金额，已经经过小数位处理
 minimum_reception         number                   最少接受金额
 price_impact              number                   价格影响
 tx_data                   string                   这次swap操作需要发送的data
