@@ -12,3 +12,7 @@ http://127.0.0.1:3000/quote?source_token=0x028171bCA77440897B824Ca71D1c56caC55b6
 
 ETH -> AUSDC
 http://127.0.0.1:3000/quote?source_token=0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE&target_token=0xBcca60bB61934080951369a648Fb03DF4F96263C&amount=1000000000000000000&part=50&slippage=5&address=0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1&&depth=2
+
+
+
+http://localhost:3000/quote?source_token=0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE&target_token=0xBcca60bB61934080951369a648Fb03DF4F96263C&amount=1000000000000000000&part=50&slippage=5&address=0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1&&depth=2

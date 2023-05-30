@@ -1,25 +1,19 @@
-const aaveTokenList = require("./constant/aavev2list.json");
-const AAVEPOOLV2ABI = require("./abi/aavev2.json");
-const BigNumber = require("bignumber.js");
+const aaveTokenList = require('./constant/aavev2list.json');
+const AAVEPOOLV2ABI = require('./abi/aavev2.json');
+const BigNumber = require('bignumber.js');
 
-class Aavehelper {
-
+class AaveV2Helper {
     constructor() {
         this.list = aaveTokenList.proto;
     }
 
-    async getOutputByExactInput(
-        token1,
-        token2,
-        amountIn,
-        router,
-        part,
-        sign
-    ) {
+    async getOutputByExactInput(tokenIn, tokenOut, amountIn, router, part, sign) {
         // aave 1：1 兑换比例
         part = Number(part);
-        if ((this.isAToken(token1)&&this.getAToken(token2)===token1) ^ 
-           (this.isAToken(token2)&&this.getAToken(token1)===token2) ) {
+        if (
+            (this.isAToken(tokenIn) && this.getAToken(tokenOut) === tokenIn) ^
+            (this.isAToken(tokenOut) && this.getAToken(tokenIn) === tokenOut)
+        ) {
             const res = new Array(part + 1).fill(0);
             for (let i = 0; i <= part; i++) {
                 res[i] = new BigNumber((amountIn * i) / part);
@@ -44,7 +38,7 @@ class Aavehelper {
                 return i.address;
             }
         }
-        return "";
+        return '';
     }
 
     getAToken(token) {
@@ -53,8 +47,8 @@ class Aavehelper {
                 return i.aTokenAddress;
             }
         }
-        return "";
+        return '';
     }
 }
 
-module.exports = Aavehelper;    
+module.exports = AaveV2Helper;

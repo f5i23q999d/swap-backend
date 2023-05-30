@@ -15,7 +15,7 @@ slippage                    number                      交易滑点，默认0.5
 sender_address              string            √         出售者的地址
 receiver_address            string                      swap后代币的接受地址，默认是出售者的地址
 depth                       integer                     计算路由时最大的计算深度，默认1
-flag                        integer                     指定流动性协议。 如果未设置，将使用所有流动性协议; 目前以["Sushiswap", "Shibaswap", "UniswapV2", "UniswapV3", "AaveV2", "Dodo"]为顺序，例如启用Shibaswap和dodo则用二进制(100010)=42 表示
+flag                        integer                     指定流动性协议。 如果未设置，将使用所有流动性协议; 目前以["SushiSwap", "ShibaSwap", "UniswapV2", "UniswapV3", "AaveV2", "Dodo"]为顺序，例如启用ShibaSwap和dodo则用二进制(100010)=42 表示
 
 
 [输出参数]
@@ -112,8 +112,8 @@ tx_data                   string                   这次swap操作需要发送�
   "estimate_cost": 8.88,
   "swaps": [
     {"name":"FxSwap","price":1.000356,"youGet":1.000356,"fees":8.88},    
-    {"name":"Sushiswap","price":0.994734,"youGet":0.994734,"fees":8.88},
-    {"name":"Shibaswap","price":0.944528,"youGet":0.944528,"fees":8.88},
+    {"name":"SushiSwap","price":0.994734,"youGet":0.994734,"fees":8.88},
+    {"name":"ShibaSwap","price":0.944528,"youGet":0.944528,"fees":8.88},
     {"name":"UniswapV2","price":0.995375,"youGet":0.995375,"fees":8.88},
     {"name":"UniswapV3","price":0.999645,"youGet":0.999645,"fees":8.88},
     {"name":"AaveV2","price":0,"youGet":0,"fees":8.88},

@@ -1,11 +1,11 @@
 const expect = require("chai").expect;
 const { ethers } = require("ethers");
-const ADDRESS = require('../helpers/constant/addresses.js');
-const Aavehelper = require('../helpers/aavehelper.js');
-const UniswapV2helper = require('../helpers/uniswapv2helper.js');
-const UniswapV3helper = require('../helpers/uniswapv3helper.js');
-const Dodohelper = require('../helpers/dodohelper.js');
-const config = require("..//config.js");
+const ADDRESS = require('../helpers/constant/addresses');
+const AaveV2Helper = require('../helpers/aavev2helper');
+const UniswapV2helper = require('../helpers/uniswapv2helper');
+const UniswapV3helper = require('../helpers/uniswapv3helper');
+const Dodohelper = require('../helpers/dodohelper');
+const config = require("..//config");
 const provider = new ethers.providers.JsonRpcProvider(config.rpc);
 const wallet = new ethers.Wallet(
     config.privateKey,
@@ -15,9 +15,9 @@ const signer = provider.getSigner(wallet.address);
 
 
 describe('backend', () => {
-  // it('should get quote from aavehelper', async () => {
-  //   const aavehelper = new Aavehelper();
-  //   console.log(await aavehelper.getOutputByExactInput(ADDRESS.DAI,ADDRESS.ADAI,1000000000000000000,null,50,signer));
+  // it('should get quote from aavev2helper', async () => {
+  //   const aavev2helper = new AaveV2helper();
+  //   console.log(await aavev2helper.getOutputByExactInput(ADDRESS.DAI,ADDRESS.ADAI,1000000000000000000,null,50,signer));
   // });
 
   it('should get quote from uniswapv2helper', async () => {
