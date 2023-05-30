@@ -260,27 +260,7 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
         matrix.push(partResults[i]);
     }
 
-    const name_string = [];
-    bitAt(flag, 0) == 1 ? name_string.push('SushiSwap') : null;
-    bitAt(flag, 1) == 1 ? name_string.push('ShibaSwap') : null;
-    bitAt(flag, 2) == 1 ? name_string.push('UniswapV2') : null;
-    bitAt(flag, 3) == 1 ? name_string.push('UniswapV3') : null;
-    bitAt(flag, 4) == 1 ? name_string.push('AaveV2') : null;
-    bitAt(flag, 5) == 1 ? name_string.push('Dodo') : null;
-
-    const gas = [120000, 120000, 120000, 150000, 250000, 300000];
-    for (let i = 0; i < name_string.length; i++) {
-        swaps.push({
-            name: name_string[i],
-            price: matrix[i][1] / Math.pow(10, outputDecimals) / (inputAmounts / Math.pow(10, inputDecimals)),
-            youGet: matrix[i][1] / Math.pow(10, outputDecimals),
-            fees: new BigNumber(gas[i])
-                .multipliedBy(gwei * 10 ** 9)
-                .multipliedBy(ethPrice)
-                .dividedBy(10 ** 18)
-                .toString()
-        });
-    }
+    let name_string = ['SushiSwap', 'ShibaSwap', 'UniswapV2', 'UniswapV3', 'AaveV2', 'Dodo'];
 
     // 构建paths对象
     const paths = [[]]; // 暂时只有一条路线
@@ -301,6 +281,28 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
             }
         }
         paths[0].push(tmp);
+    }
+
+    name_string = [];
+    bitAt(flag, 0) == 1 ? name_string.push('SushiSwap') : null;
+    bitAt(flag, 1) == 1 ? name_string.push('ShibaSwap') : null;
+    bitAt(flag, 2) == 1 ? name_string.push('UniswapV2') : null;
+    bitAt(flag, 3) == 1 ? name_string.push('UniswapV3') : null;
+    bitAt(flag, 4) == 1 ? name_string.push('AaveV2') : null;
+    bitAt(flag, 5) == 1 ? name_string.push('Dodo') : null;
+
+    const gas = [120000, 120000, 120000, 150000, 250000, 300000];
+    for (let i = 0; i < name_string.length; i++) {
+        swaps.push({
+            name: name_string[i],
+            price: matrix[i][1] / Math.pow(10, outputDecimals) / (inputAmounts / Math.pow(10, inputDecimals)),
+            youGet: matrix[i][1] / Math.pow(10, outputDecimals),
+            fees: new BigNumber(gas[i])
+                .multipliedBy(gwei * 10 ** 9)
+                .multipliedBy(ethPrice)
+                .dividedBy(10 ** 18)
+                .toString()
+        });
     }
 
     const estimated_gas_list = [170000, 170000, 170000, 205000, 467688, 240000];
@@ -609,7 +611,7 @@ async function routerPath(srcToken, destToken, inputAmounts, part, flag, depth) 
         console.log(returnAmount, distribution);
         paths.push({ returnAmount: returnAmount, path: [srcToken, destToken, 0, distribution, 0] }); // 添加路径
     } else if (depth == 2) {
-        const middleToken = [ADDRESS.WETH, ADDRESS.USDT];
+        const middleToken = [ADDRESS.WETH, ADDRESS.USDT, ADDRESS.USDC];
 
         const queries = [];
         for (const middle of middleToken) {
@@ -780,6 +782,14 @@ app.get('/quote', async (req, res) => {
             res.send(data);
             console.log('命中缓存');
             return;
+        }
+
+        if (Number(inputAmounts) <= 0) {
+            throw 'invalid inputAmounts';
+        }
+
+        if (srcToken === destToken) {
+            throw 'source_token should not same as target_token';
         }
 
         let result = {};
