@@ -9,6 +9,7 @@ const ERC20ABI = require('../helpers/abi/ERC20.json');
 const ADAI_ADDRESS = '0x028171bCA77440897B824Ca71D1c56caC55b68A3';
 const axios = require('axios');
 const ADDRESS = require('../helpers/constant/addresses.js');
+
 async function test() {
     const ADAI = new ethers.Contract(ADAI_ADDRESS, ERC20ABI, wallet);
     console.log((await ADAI.balanceOf(wallet.address)).toString());
@@ -28,8 +29,8 @@ async function test2() {
     //  1 ETH => USDT
     // 先node start.js启动服务
 
-    const result = await axios.get('http://localhost:3000/quote', {
-        //如果是测试网，改成http://8.212.8.124:8546/quote
+    const result = await axios.get('http://localhost:3000/quote', {       
+        //如果是测试网，改成http://8.212.8.124:8547/quote
         params: {
             source_token: ADDRESS.ETH,
             target_token: ADDRESS.USDT,
@@ -140,7 +141,7 @@ async function test5() {
     // 先node start.js启动服务
 
     const result = await axios.get('http://localhost:3000/quote', {
-        //如果是测试网，改成http://8.212.8.124:8546/quote
+        //如果是测试网，改成http://8.212.8.124:8547/quote
         params: {
             source_token: ADDRESS.ETH,
             target_token: ADDRESS.PEPE,
@@ -177,7 +178,7 @@ async function test6() {
     // 先node start.js启动服务
 
     const result = await axios.get('http://localhost:3000/quote', {
-        //如果是测试网，改成http://8.212.8.124:8546/quote
+        //如果是测试网，改成http://8.212.8.124:8547/quote
         params: {
             source_token: ADDRESS.ETH,
             target_token: ADDRESS.DAI,
@@ -208,7 +209,7 @@ async function test6() {
     await DAI.approve(config.FXSWAP_ADDRESS, String(100e18)); // 重置授权
 
     const result2 = await axios.get('http://localhost:3000/quote', {
-        //如果是测试网，改成http://8.212.8.124:8546/quote
+        //如果是测试网，改成http://8.212.8.124:8547/quote
         params: {
             source_token: ADDRESS.DAI,
             target_token: ADDRESS.ETH,
@@ -231,4 +232,4 @@ async function test6() {
     return;
 }
 
-test6();
+test2();

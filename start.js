@@ -153,7 +153,7 @@ async function getChart(tokenIn, tokenOut, days, part, currency) {
     }
 }
 
-async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath) {
+async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath, flag) {
     // 返回给前端的显示信息
     if (srcToken === ADDRESS.ETH) {
         srcToken = ADDRESS.WETH;
@@ -184,32 +184,69 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
             fees: 8.88
         }
     ];
-    const UniswapV2Factories = [ADDRESS.SushiSwapFactory, ADDRESS.ShibaSwapFactory, ADDRESS.UniswapV2Factory]; // 都是基于uni的v2协议
-    let uniswapv2helper = new Uniswapv2helper();
-    for (let i = 0; i < UniswapV2Factories.length; i++) {
-        queries.push(
-            uniswapv2helper.getOutputByExactInput(srcToken, destToken, inputAmounts, UniswapV2Factories[i], 1, signer)
-        );
-    }
-
-    const uniswapv3helper = new Uniswapv3helper();
-    queries.push(
-        uniswapv3helper.getOutputByExactInput(
-            srcToken,
-            destToken,
-            inputAmounts,
-            uniswapv3_fee,
-            ADDRESS.V3QUOTE_V2,
-            1,
-            signer
-        )
-    );
-
     const aavev2helper = new AaveV2helper();
-    queries.push(aavev2helper.getOutputByExactInput(srcToken, destToken, inputAmounts, ADDRESS.AAVEPOOLV2, 1, signer));
-
+    const uniswapv2helper = new Uniswapv2helper();
+    const uniswapv3helper = new Uniswapv3helper();
     const dodohelper = new Dodohelper();
-    queries.push(dodohelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, 1, signer));
+    //const compoundhelper = new Compoundhelper();
+    queries = []; // 查询队列
+    bitAt(flag, 0) == 1
+        ? queries.push(
+              uniswapv2helper.getOutputByExactInput(
+                  srcToken,
+                  destToken,
+                  inputAmounts,
+                  ADDRESS.SushiSwapFactory,
+                  1,
+                  signer
+              )
+          )
+        : null;
+    bitAt(flag, 1) == 1
+        ? queries.push(
+              uniswapv2helper.getOutputByExactInput(
+                  srcToken,
+                  destToken,
+                  inputAmounts,
+                  ADDRESS.ShibaSwapFactory,
+                  1,
+                  signer
+              )
+          )
+        : null;
+    bitAt(flag, 2) == 1
+        ? queries.push(
+              uniswapv2helper.getOutputByExactInput(
+                  srcToken,
+                  destToken,
+                  inputAmounts,
+                  ADDRESS.UniswapV2Factory,
+                  1,
+                  signer
+              )
+          )
+        : null;
+    bitAt(flag, 3) == 1
+        ? queries.push(
+              uniswapv3helper.getOutputByExactInput(
+                  srcToken,
+                  destToken,
+                  inputAmounts,
+                  uniswapv3_fee,
+                  ADDRESS.V3QUOTE_V2,
+                  1,
+                  signer
+              )
+          )
+        : null;
+    bitAt(flag, 4) == 1
+        ? queries.push(
+              aavev2helper.getOutputByExactInput(srcToken, destToken, inputAmounts, ADDRESS.AAVEPOOLV2, 1, signer)
+          )
+        : null;
+    bitAt(flag, 5) == 1
+        ? queries.push(dodohelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, 1, signer))
+        : null;
 
     //const compoundhelper = new Compoundhelper();
     //queries.push(compoundhelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, 1, signer));
@@ -223,7 +260,14 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
         matrix.push(partResults[i]);
     }
 
-    const name_string = ['SushiSwap', 'ShibaSwap', 'UniswapV2', 'UniswapV3', 'AaveV2', 'Dodo'];
+    const name_string = [];
+    bitAt(flag, 0) == 1 ? name_string.push('SushiSwap') : null;
+    bitAt(flag, 1) == 1 ? name_string.push('ShibaSwap') : null;
+    bitAt(flag, 2) == 1 ? name_string.push('UniswapV2') : null;
+    bitAt(flag, 3) == 1 ? name_string.push('UniswapV3') : null;
+    bitAt(flag, 4) == 1 ? name_string.push('AaveV2') : null;
+    bitAt(flag, 5) == 1 ? name_string.push('Dodo') : null;
+
     const gas = [120000, 120000, 120000, 150000, 250000, 300000];
     for (let i = 0; i < name_string.length; i++) {
         swaps.push({
@@ -294,11 +338,14 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
     price_impact_queries.push(inputPrice);
     price_impact_queries.push(outputPrice);
     const price_impact_result = await Promise.all(price_impact_queries);
-    const price_impact = price_impact_result[0]
+    let price_impact = price_impact_result[0]
         .minus(price_impact_result[1])
         .dividedBy(price_impact_result[0])
         .multipliedBy(100)
         .toFixed(2);
+    if (isNaN(price_impact)) {
+        price_impact = 0;
+    }
     end = new Date().getTime();
     console.log('price_impact: ' + (end - start) + 'ms');
 
@@ -562,7 +609,7 @@ async function routerPath(srcToken, destToken, inputAmounts, part, flag, depth) 
         console.log(returnAmount, distribution);
         paths.push({ returnAmount: returnAmount, path: [srcToken, destToken, 0, distribution, 0] }); // 添加路径
     } else if (depth == 2) {
-        const middleToken = [ADDRESS.WETH, ADDRESS.USDT, ADDRESS.WBTC, ADDRESS.USDC, ADDRESS.DAI];
+        const middleToken = [ADDRESS.WETH, ADDRESS.USDT];
 
         const queries = [];
         for (const middle of middleToken) {
@@ -752,7 +799,7 @@ app.get('/quote', async (req, res) => {
         let end = new Date().getTime();
         console.log('寻找路径耗时: ' + (end - start) + 'ms');
 
-        let display = await getDisplayInformation(srcToken, destToken, inputAmounts, bestPath);
+        let display = await getDisplayInformation(srcToken, destToken, inputAmounts, bestPath, flag);
         let end2 = new Date().getTime();
         console.log('获取展示信息耗时: ' + (end2 - end) + 'ms');
 
