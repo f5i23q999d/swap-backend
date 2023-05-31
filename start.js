@@ -826,7 +826,7 @@ app.get('/quote', async (req, res) => {
         result.estimate_gas = -1;
         result.estimate_cost = display.swaps[0].fees;
         result.reception = new BigNumber(display.target_token_amount).dividedBy(10 ** display.outputDecimals);
-        result.minimum_reception = minimumReceived.dividedBy(10 ** display.outputDecimals);
+        result.minimum_reception = minimumReceived.toString();
         result.price_impact = display.price_impact;
 
         const paths = [];

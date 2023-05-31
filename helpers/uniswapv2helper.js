@@ -23,9 +23,9 @@ class UniswapV2Helper {
 
             const tokenInContract = new ethers.Contract(tokenIn, IERC20, signer);
             const tokenOutContract = new ethers.Contract(tokenOut, IERC20, signer);
-            const tokenInBalance = await tokenInContract.balanceOf(pool);
-            const tokenOutBalance = await tokenOutContract.balanceOf(pool);
-
+            const balance_queries = await Promise.all([tokenInContract.balanceOf(pool),tokenOutContract.balanceOf(pool)]);
+            const tokenInBalance = balance_queries[0];
+            const tokenOutBalance = balance_queries[1];
             const res = [];
             for (let i = 0; i <= part; i++) {
                 const amountIn_part = (amountIn * i) / part;
