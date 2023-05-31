@@ -746,13 +746,16 @@ async function _queryBetweenInputAndOutputWithMiddle(srcToken, middle, destToken
 
 async function getPrice(token, amount) {
     try {
-        const result = await axios.get('https://service.price.dxpool.com:3001/price', {
-            params: {
-                symbol: token
+        const result = await axios.get(`https://min-api.cryptocompare.com/data/price`, {
+            params: {                
+                fsym: token,
+                tsyms: "USD",
+                api_key: config.cryptocompare_apikey
             }
         });
-        return new BigNumber(amount).multipliedBy(result.data.data.price.CNY[token]);
+        return new BigNumber(amount).multipliedBy(result.data.USD);
     } catch (err) {
+        console.log(err);
         return new BigNumber(0);
     }
 }
