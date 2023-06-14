@@ -747,9 +747,9 @@ async function _queryBetweenInputAndOutputWithMiddle(srcToken, middle, destToken
 async function getPrice(token, amount) {
     try {
         const result = await axios.get(`https://min-api.cryptocompare.com/data/price`, {
-            params: {                
+            params: {
                 fsym: token,
-                tsyms: "USD",
+                tsyms: 'USD',
                 api_key: config.cryptocompare_apikey
             }
         });
@@ -759,6 +759,23 @@ async function getPrice(token, amount) {
         return new BigNumber(0);
     }
 }
+
+function nullResult(){
+    let result ={};
+    result.source_token = ADDRESS.NULL;
+    result.target_token = ADDRESS.NULL;
+    result.source_token_amount = '0';
+    result.target_token_amount = '0';
+    result.swaps = [];
+    result.paths = [];
+    result.minimumReceived = '0';
+    result.estimate_gas = '0';
+    result.estimate_cost = '0';
+    result.reception = '0';
+    result.minimum_reception = '0';
+    result.price_impact = '0';
+    return result;
+};
 
 app.get('/', (req, res) => {
     res.send('Hello FxSwap!');
@@ -867,6 +884,7 @@ app.get('/quote', async (req, res) => {
     console.log('总耗时: ' + (end - start) + 'ms');
 });
 
+
 app.get('/chart', async (req, res) => {
     const start = new Date().getTime();
 
@@ -885,6 +903,90 @@ app.get('/chart', async (req, res) => {
 
     const end = new Date().getTime();
     console.log('图标总耗时: ' + (end - start) + 'ms');
+});
+
+app.get('/source_0x', async (req, res) => {
+    const chainID = isNaN(Number(req.query.chainID)) ? Number(req.query.chainID) : 1;
+    if (chainID === 1) {
+        const list = await axios.get(`https://api.0x.org/swap/v1/sources`);
+        res.send(list.data.records);
+    }
+    res.send('unsupported chain');
+});
+
+app.get('/quote_0x', async (req, res) => {
+    try {
+        const srcToken = req.query.source_token; // 源token
+        const destToken = req.query.target_token; // 目标token
+        const inputAmounts = req.query.amount; // 源token数量
+        const side = req.query.side ? String(req.query.side) : 'SELL';
+        const slippage = isNaN(Number(req.query.slippage)) ? 0.03 : Number(req.query.slippage) / 1000; // 滑点
+        const senderAddress = req.query.sender_address; // 用户地址
+        //const receiverAddress = req.query.receiver_address;
+        const protocols = req.query.protocols;
+        const chainID = 1;
+
+        if (Number(inputAmounts) <= 0) {
+            throw 'invalid inputAmounts';
+        }
+
+        if (srcToken === destToken) {
+            throw 'source_token should not same as target_token';
+        }
+
+        let params = {};
+        params.sellToken = srcToken;
+        params.buyToken = destToken;
+        side === 'SELL' ? (params.sellAmount = inputAmounts) : (params.buyAmount = inputAmounts);
+        params.slippagePercentage = slippage;
+        params.affiliateAddress = wallet.address;
+        if (protocols) {
+            const result = [];
+            const list = (await axios.get(`https://api.0x.org/swap/v1/sources`)).data.records;
+            const words = protocols.split(',');
+            list.forEach((item) => {
+                if (!words.includes(item)) {
+                    result.push(item);
+                }
+            });
+            params.excludedSources = result.join(',');
+        }
+
+        const data = (await axios.get(`https://api.0x.org/swap/v1/quote`, {
+            params,
+            headers: {
+                '0x-api-key': config['0x_apikey']
+            }
+        })).data;
+        let result = {};
+        result.source_token = srcToken;
+        result.target_token = destToken;
+        result.source_token_amount = inputAmounts;
+        result.target_token_amount = side === 'SELL' ? data.buyAmount : data.sellAmount;
+        result.minimumReceived =
+            side === 'SELL'
+                ? new BigNumber(data.buyAmount).multipliedBy(1 - slippage).toString()
+                : new BigNumber(data.sellAmount).multipliedBy(1 - slippage).toString();
+        result.estimate_gas = data.estimatedGas;
+        const ethPrice = await getPrice('ETH', 1);
+        result.estimate_cost = new BigNumber(data.estimatedGas)
+            .multipliedBy(data.gasPrice)
+            .multipliedBy(ethPrice)
+            .dividedBy(10 ** 18)
+            .toString();
+        const outputDecimals =
+            side === 'SELL'
+                ? (destToken === ADDRESS.ETH ? 18 : await Util.getDecimals(destToken, signer))
+                : (srcToken === ADDRESS.ETH ? 18 : await Util.getDecimals(srcToken, signer));
+        result.reception = new BigNumber(result.target_token_amount).dividedBy(10 ** outputDecimals);
+        result.minimum_reception = result.minimumReceived.toString();
+        result.price_impact = data.estimatedPriceImpact;
+        result.tx_data = data.data;
+        res.send(result);
+    } catch (err) {
+        console.log(err);
+        res.send(nullResult());
+    }
 });
 
 app.listen(port, () => {
