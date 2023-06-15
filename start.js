@@ -290,25 +290,11 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
     }
 
     name_string = [];
-    if (bitAt(flag, 0) == 1) {
-        name_string.push('SushiSwap');
+    for(let i = 0 ;i<dex_info.dex.length;i++){
+        if (bitAt(flag, i) == 1) {
+            name_string.push(dex_info.dex[i]);
+        }
     }
-    if (bitAt(flag, 1) == 1) {
-        name_string.push('ShibaSwap');
-    }
-    if (bitAt(flag, 2) == 1) {
-        name_string.push('UniswapV2');
-    }
-    if (bitAt(flag, 3) == 1) {
-        name_string.push('UniswapV3');
-    }
-    if (bitAt(flag, 4) == 1) {
-        name_string.push('AaveV2');
-    }
-    if (bitAt(flag, 5) == 1) {
-        name_string.push('Dodo');
-    }
-
     const gas = dex_info.gas;
     for (let i = 0; i < name_string.length; i++) {
         swaps.push({
@@ -495,8 +481,6 @@ async function buildTrades(paths) {
 }
 
 async function routerPath(srcToken, destToken, inputAmounts, part, flag, depth) {
-    // dex顺序 [sushiSwap,shibaSwap,uniswapv2,uniswapv3,aave,dodo，compound]
-
     const paths = [];
 
     // 先做第一层转换，例如aave和compound, 都是Defi的token与对应token的转换
