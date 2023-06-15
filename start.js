@@ -10,7 +10,6 @@ const wallet = new ethers.Wallet(config.privateKey, provider);
 const axios = require('axios');
 const signer = provider.getSigner(wallet.address);
 const MAX_INT = '115792089237316195423570985008687907853269984665640564039457584007913129639934';
-const BigNumber = require('bignumber.js');
 const ADDRESS = require('./helpers/constant/addresses');
 
 const FXSWAP_ABI = require('./helpers/abi/fxswap.json');
@@ -24,6 +23,11 @@ const Util = require('./helpers/utils/util.js');
 const uniswapv3_fee = 3000;
 const gwei = 30;
 const ethPrice = 2000;
+const dex_info = {
+    dex: ['SushiSwap', 'ShibaSwap', 'UniswapV2', 'UniswapV3', 'AaveV2', 'Dodo'],
+    gas: [120000, 120000, 120000, 150000, 250000, 300000],
+    estimate_cost: [170000, 170000, 170000, 205000, 467688, 240000]
+};
 
 const cache = new Cache(5);
 
@@ -32,6 +36,8 @@ app.use(cors());
 function bitAt(num, pos) {
     return (num >> pos) & 1;
 }
+
+const BN = Util.BN; // 大整数转换
 
 function uniformDistribution(distribution) {
     let distribution_count = 0;
@@ -58,7 +64,7 @@ function findBestDistributionWithBigNumber(s, amounts) {
     for (let j = 0; j <= s; j++) {
         answer[0][j] = amounts[0][j];
         for (let i = 1; i < n; i++) {
-            answer[i][j] = new BigNumber(-1e72);
+            answer[i][j] = BN(-1e72);
         }
         parent[0][j] = 0;
     }
@@ -84,12 +90,12 @@ function findBestDistributionWithBigNumber(s, amounts) {
         distribution[curExchange] = partsLeft - parent[curExchange][partsLeft];
         partsLeft = parent[curExchange][partsLeft];
     }
-    const returnAmount = answer[n - 1][s] == new BigNumber(-1e72) ? new BigNumber(0) : answer[n - 1][s];
+    const returnAmount = answer[n - 1][s] == BN(-1e72) ? BN(0) : answer[n - 1][s];
 
     return { returnAmount, distribution };
 }
 
-async function getChart(tokenIn, tokenOut, days, part, currency) {
+async function getChart(tokenIn, tokenOut, days) {
     try {
         if (tokenIn === ADDRESS.ETH) {
             tokenIn = ADDRESS.WETH;
@@ -174,14 +180,15 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
     const outputSymbol = baseResults[3];
 
     queries = [];
+    const returnAmount = BN(bestPath.returnAmount);
     const swaps = [
         {
             name: 'FxSwap',
-            price: bestPath.returnAmount
+            price: returnAmount
                 .dividedBy(10 ** outputDecimals)
-                .dividedBy(new BigNumber(inputAmounts).dividedBy(10 ** inputDecimals)),
-            youGet: bestPath.returnAmount.dividedBy(Math.pow(10, outputDecimals)),
-            fees: 8.88
+                .dividedBy(BN(inputAmounts).dividedBy(10 ** inputDecimals)),
+            youGet: returnAmount.dividedBy(Math.pow(10, outputDecimals)),
+            fees: 0
         }
     ];
     const aavev2helper = new AaveV2helper();
@@ -190,64 +197,63 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
     const dodohelper = new Dodohelper();
     //const compoundhelper = new Compoundhelper();
     queries = []; // 查询队列
-    bitAt(flag, 0) == 1
-        ? queries.push(
-              uniswapv2helper.getOutputByExactInput(
-                  srcToken,
-                  destToken,
-                  inputAmounts,
-                  ADDRESS.SushiSwapFactory,
-                  1,
-                  signer
-              )
-          )
-        : null;
-    bitAt(flag, 1) == 1
-        ? queries.push(
-              uniswapv2helper.getOutputByExactInput(
-                  srcToken,
-                  destToken,
-                  inputAmounts,
-                  ADDRESS.ShibaSwapFactory,
-                  1,
-                  signer
-              )
-          )
-        : null;
-    bitAt(flag, 2) == 1
-        ? queries.push(
-              uniswapv2helper.getOutputByExactInput(
-                  srcToken,
-                  destToken,
-                  inputAmounts,
-                  ADDRESS.UniswapV2Factory,
-                  1,
-                  signer
-              )
-          )
-        : null;
-    bitAt(flag, 3) == 1
-        ? queries.push(
-              uniswapv3helper.getOutputByExactInput(
-                  srcToken,
-                  destToken,
-                  inputAmounts,
-                  uniswapv3_fee,
-                  ADDRESS.V3QUOTE_V2,
-                  1,
-                  signer
-              )
-          )
-        : null;
-    bitAt(flag, 4) == 1
-        ? queries.push(
-              aavev2helper.getOutputByExactInput(srcToken, destToken, inputAmounts, ADDRESS.AAVEPOOLV2, 1, signer)
-          )
-        : null;
-    bitAt(flag, 5) == 1
-        ? queries.push(dodohelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, 1, signer))
-        : null;
-
+    if (bitAt(flag, 0) == 1) {
+        queries.push(
+            uniswapv2helper.getOutputByExactInput(
+                srcToken,
+                destToken,
+                inputAmounts,
+                ADDRESS.SushiSwapFactory,
+                1,
+                signer
+            )
+        );
+    }
+    if (bitAt(flag, 1) == 1) {
+        queries.push(
+            uniswapv2helper.getOutputByExactInput(
+                srcToken,
+                destToken,
+                inputAmounts,
+                ADDRESS.ShibaSwapFactory,
+                1,
+                signer
+            )
+        );
+    }
+    if (bitAt(flag, 2) == 1) {
+        queries.push(
+            uniswapv2helper.getOutputByExactInput(
+                srcToken,
+                destToken,
+                inputAmounts,
+                ADDRESS.UniswapV2Factory,
+                1,
+                signer
+            )
+        );
+    }
+    if (bitAt(flag, 3) == 1) {
+        queries.push(
+            uniswapv3helper.getOutputByExactInput(
+                srcToken,
+                destToken,
+                inputAmounts,
+                uniswapv3_fee,
+                ADDRESS.V3QUOTE_V2,
+                1,
+                signer
+            )
+        );
+    }
+    if (bitAt(flag, 4) == 1) {
+        queries.push(
+            aavev2helper.getOutputByExactInput(srcToken, destToken, inputAmounts, ADDRESS.AAVEPOOLV2, 1, signer)
+        );
+    }
+    if (bitAt(flag, 5) == 1) {
+        queries.push(dodohelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, 1, signer));
+    }
     //const compoundhelper = new Compoundhelper();
     //queries.push(compoundhelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, 1, signer));
 
@@ -260,7 +266,7 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
         matrix.push(partResults[i]);
     }
 
-    let name_string = ['SushiSwap', 'ShibaSwap', 'UniswapV2', 'UniswapV3', 'AaveV2', 'Dodo'];
+    let name_string = dex_info.dex;
 
     // 构建paths对象
     const paths = [[]]; // 暂时只有一条路线
@@ -284,20 +290,32 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
     }
 
     name_string = [];
-    bitAt(flag, 0) == 1 ? name_string.push('SushiSwap') : null;
-    bitAt(flag, 1) == 1 ? name_string.push('ShibaSwap') : null;
-    bitAt(flag, 2) == 1 ? name_string.push('UniswapV2') : null;
-    bitAt(flag, 3) == 1 ? name_string.push('UniswapV3') : null;
-    bitAt(flag, 4) == 1 ? name_string.push('AaveV2') : null;
-    bitAt(flag, 5) == 1 ? name_string.push('Dodo') : null;
+    if (bitAt(flag, 0) == 1) {
+        name_string.push('SushiSwap');
+    }
+    if (bitAt(flag, 1) == 1) {
+        name_string.push('ShibaSwap');
+    }
+    if (bitAt(flag, 2) == 1) {
+        name_string.push('UniswapV2');
+    }
+    if (bitAt(flag, 3) == 1) {
+        name_string.push('UniswapV3');
+    }
+    if (bitAt(flag, 4) == 1) {
+        name_string.push('AaveV2');
+    }
+    if (bitAt(flag, 5) == 1) {
+        name_string.push('Dodo');
+    }
 
-    const gas = [120000, 120000, 120000, 150000, 250000, 300000];
+    const gas = dex_info.gas;
     for (let i = 0; i < name_string.length; i++) {
         swaps.push({
             name: name_string[i],
             price: matrix[i][1] / Math.pow(10, outputDecimals) / (inputAmounts / Math.pow(10, inputDecimals)),
             youGet: matrix[i][1] / Math.pow(10, outputDecimals),
-            fees: new BigNumber(gas[i])
+            fees: BN(gas[i])
                 .multipliedBy(gwei * 10 ** 9)
                 .multipliedBy(ethPrice)
                 .dividedBy(10 ** 18)
@@ -305,7 +323,7 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
         });
     }
 
-    const estimated_gas_list = [170000, 170000, 170000, 205000, 467688, 240000];
+    const estimated_gas_list = dex_info.estimate_cost;
     let estimated_gas_total = 0;
     // 遍历paths[0]
     for (let i = 0; i < paths[0].length; i++) {
@@ -318,7 +336,7 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
             estimated_gas_total += estimated_gas_list[inx];
         }
     }
-    swaps[0].fees = new BigNumber(estimated_gas_total)
+    swaps[0].fees = BN(estimated_gas_total)
         .multipliedBy(gwei * 10 ** 9)
         .multipliedBy(ethPrice)
         .dividedBy(10 ** 18)
@@ -328,14 +346,10 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
     start = new Date().getTime();
     const inputPrice = getPrice(
         inputSymbol,
-        new BigNumber(inputAmounts).dividedBy(10 ** inputDecimals).toString(),
+        BN(inputAmounts).dividedBy(10 ** inputDecimals).toString(),
         signer
     );
-    const outputPrice = getPrice(
-        outputSymbol,
-        bestPath.returnAmount.dividedBy(10 ** outputDecimals).toString(),
-        signer
-    );
+    const outputPrice = getPrice(outputSymbol, returnAmount.dividedBy(10 ** outputDecimals).toString(), signer);
     const price_impact_queries = [];
     price_impact_queries.push(inputPrice);
     price_impact_queries.push(outputPrice);
@@ -360,7 +374,8 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
         outputDecimals: outputDecimals,
         paths: paths,
         swaps: swaps,
-        price_impact: price_impact
+        price_impact: price_impact,
+        estimate_gas: estimated_gas_total
     };
 
     return result;
@@ -515,113 +530,23 @@ async function routerPath(srcToken, destToken, inputAmounts, part, flag, depth) 
     }
     // if (compoundhelper.isCToken(srcToken))   如果目标token是ctoken
 
-    const queries = []; // 查询队列
-    let uniswapv2helper = new Uniswapv2helper(); // 都是基于uni的v2协议
-    bitAt(flag, 0) == 1
-        ? queries.push(
-              uniswapv2helper.getOutputByExactInput(
-                  srcToken,
-                  destToken,
-                  inputAmounts,
-                  ADDRESS.SushiSwapFactory,
-                  part,
-                  signer
-              )
-          )
-        : queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
-    bitAt(flag, 1) == 1
-        ? queries.push(
-              uniswapv2helper.getOutputByExactInput(
-                  srcToken,
-                  destToken,
-                  inputAmounts,
-                  ADDRESS.ShibaSwapFactory,
-                  part,
-                  signer
-              )
-          )
-        : queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
-    bitAt(flag, 2) == 1
-        ? queries.push(
-              uniswapv2helper.getOutputByExactInput(
-                  srcToken,
-                  destToken,
-                  inputAmounts,
-                  ADDRESS.UniswapV2Factory,
-                  part,
-                  signer
-              )
-          )
-        : queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
-
-    const uniswapv3helper = new Uniswapv3helper();
-    bitAt(flag, 3) == 1
-        ? queries.push(
-              uniswapv3helper.getOutputByExactInput(
-                  srcToken,
-                  destToken,
-                  inputAmounts,
-                  uniswapv3_fee,
-                  ADDRESS.V3QUOTE_V2,
-                  part,
-                  signer
-              )
-          )
-        : queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
-
-    bitAt(flag, 4) == 1
-        ? queries.push(
-              aavev2helper.getOutputByExactInput(srcToken, destToken, inputAmounts, ADDRESS.AAVEPOOLV2, part, signer)
-          )
-        : queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
-
-    const dodohelper = new Dodohelper();
-    bitAt(flag, 5) == 1
-        ? queries.push(dodohelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, part, signer))
-        : queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
-
     let returnAmount = 0;
-    let distribution = null;
     if (depth == 1) {
-        // matrix矩阵保存每个swap进行part划分后计算得到的金额结果，例如
-        /*
-            [
-                [0,1,2,3],
-                [0,2,4,6],
-                [0,3,6,9],
-                [0,4,8,12]
-            ]
-            这是part=3的情形，第一行的0代表输入金额为0时，输出的数量， 第一行的1代表输入金额为总的1/3时输出的数量，第一行的2代表输入金额为总的2/3时输出的数量,以此类推
-        */
-        let matrix = [];
-
-        const partResults = await Promise.all(queries);
-        for (let i = 0; i < partResults.length; i++) {
-            matrix.push(partResults[i]);
-        }
-
-        // 计算最优路径
-        const res = findBestDistributionWithBigNumber(part, matrix);
-        returnAmount = res.returnAmount;
-        distribution = res.distribution;
-
-        // 归一化distribution数组
-        distribution = uniformDistribution(distribution);
-
-        console.log(returnAmount, distribution);
-        paths.push({ returnAmount: returnAmount, path: [srcToken, destToken, 0, distribution, 0] }); // 添加路径
+        const result = await _queryBetweenInputAndOutput(srcToken, destToken, inputAmounts, part, flag);
+        returnAmount = result.returnAmount;
+        console.log(result.returnAmount, result.path);
+        paths.push({ returnAmount, path: result.path }); // 添加路径
     } else if (depth == 2) {
         const middleToken = [ADDRESS.WETH, ADDRESS.USDT, ADDRESS.USDC];
-
         const queries = [];
         for (const middle of middleToken) {
             queries.push(_queryBetweenInputAndOutputWithMiddle(srcToken, middle, destToken, inputAmounts, part, flag));
         }
         const queryResults = await Promise.all(queries);
         let maxIndex = 0;
-        let maxReturnAmount = new BigNumber(0);
+        let maxReturnAmount = BN(0);
         for (let i = 0; i < queryResults.length; i++) {
-            if (new BigNumber(queryResults[i].returnAmount).isGreaterThan(maxReturnAmount)) {
+            if (BN(queryResults[i].returnAmount).isGreaterThan(maxReturnAmount)) {
                 maxReturnAmount = queryResults[i].returnAmount;
                 maxIndex = i;
             }
@@ -629,7 +554,7 @@ async function routerPath(srcToken, destToken, inputAmounts, part, flag, depth) 
         for (let i = 0; i < queryResults[maxIndex].paths.length; i++) {
             paths.push(queryResults[maxIndex].paths[i]);
         }
-        returnAmount = new BigNumber(queryResults[maxIndex].returnAmount);
+        returnAmount = BN(queryResults[maxIndex].returnAmount);
     }
 
     // 特殊token的转换，例如aave和compound
@@ -673,7 +598,7 @@ async function _queryBetweenInputAndOutput(srcToken, destToken, inputAmounts, pa
                   signer
               )
           )
-        : queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
+        : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     bitAt(flag, 1) == 1
         ? queries.push(
               uniswapv2helper.getOutputByExactInput(
@@ -685,7 +610,7 @@ async function _queryBetweenInputAndOutput(srcToken, destToken, inputAmounts, pa
                   signer
               )
           )
-        : queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
+        : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     bitAt(flag, 2) == 1
         ? queries.push(
               uniswapv2helper.getOutputByExactInput(
@@ -697,7 +622,7 @@ async function _queryBetweenInputAndOutput(srcToken, destToken, inputAmounts, pa
                   signer
               )
           )
-        : queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
+        : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     bitAt(flag, 3) == 1
         ? queries.push(
               uniswapv3helper.getOutputByExactInput(
@@ -710,16 +635,16 @@ async function _queryBetweenInputAndOutput(srcToken, destToken, inputAmounts, pa
                   signer
               )
           )
-        : queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
+        : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     bitAt(flag, 4) == 1
         ? queries.push(
               aavev2helper.getOutputByExactInput(srcToken, destToken, inputAmounts, ADDRESS.AAVEPOOLV2, part, signer)
           )
-        : queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
+        : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     bitAt(flag, 5) == 1
         ? queries.push(dodohelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, part, signer))
-        : queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
-    // bitAt(flag, 6) == 1 ? queries.push(compoundhelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, part, signer)) : queries.push(new Array(Number(part) + 1).fill(new BigNumber(0)));
+        : queries.push(new Array(Number(part) + 1).fill(BN(0)));
+    // bitAt(flag, 6) == 1 ? queries.push(compoundhelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, part, signer)) : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     let matrix = [];
     let partResults = await Promise.all(queries);
     for (let i = 0; i < partResults.length; i++) {
@@ -739,9 +664,9 @@ async function _queryBetweenInputAndOutput(srcToken, destToken, inputAmounts, pa
 }
 
 async function _queryBetweenInputAndOutputWithMiddle(srcToken, middle, destToken, inputAmounts, part, flag) {
-    const res1 = await _queryBetweenInputAndOutput(srcToken, middle, inputAmounts, part, flag);
-    const res2 = await _queryBetweenInputAndOutput(middle, destToken, res1.returnAmount, part, flag);
-    return { returnAmount: res2.returnAmount, paths: [res1, res2] };
+    const middle_res = await _queryBetweenInputAndOutput(srcToken, middle, inputAmounts, part, flag);
+    const dest_res = await _queryBetweenInputAndOutput(middle, destToken, middle_res.returnAmount, part, flag);
+    return { returnAmount: dest_res.returnAmount, paths: [middle_res, dest_res] };
 }
 
 async function getPrice(token, amount) {
@@ -753,15 +678,15 @@ async function getPrice(token, amount) {
                 api_key: config.cryptocompare_apikey
             }
         });
-        return new BigNumber(amount).multipliedBy(result.data.USD);
+        return BN(amount).multipliedBy(result.data.USD);
     } catch (err) {
         console.log(err);
-        return new BigNumber(0);
+        return BN(0);
     }
 }
 
-function nullResult(){
-    let result ={};
+function nullResult() {
+    let result = {};
     result.source_token = ADDRESS.NULL;
     result.target_token = ADDRESS.NULL;
     result.source_token_amount = '0';
@@ -775,7 +700,7 @@ function nullResult(){
     result.minimum_reception = '0';
     result.price_impact = '0';
     return result;
-};
+}
 
 app.get('/', (req, res) => {
     res.send('Hello FxSwap!');
@@ -783,7 +708,6 @@ app.get('/', (req, res) => {
 
 app.get('/quote', async (req, res) => {
     const start = new Date().getTime();
-
     try {
         const srcToken = req.query.source_token; // 源token
         const destToken = req.query.target_token; // 目标token
@@ -794,7 +718,6 @@ app.get('/quote', async (req, res) => {
         const receiverAddress = req.query.receiver_address;
         const depth = isNaN(Number(req.query.depth)) ? 0 : Number(req.query.depth); // 搜索深度
         const flag = isNaN(Number(req.query.flag)) ? 2 ** 52 - 1 : Number(req.query.flag); // dex筛选位
-
         const data = cache.get(
             `quote:${srcToken}:${destToken}:${inputAmounts}:${part}:${slippage}:${senderAddress}:${receiverAddress}:${depth}:${flag}`
         );
@@ -813,7 +736,6 @@ app.get('/quote', async (req, res) => {
         }
 
         let result = {};
-
         let start = new Date().getTime();
         let bestPath = null;
         if (depth === 0) {
@@ -821,7 +743,7 @@ app.get('/quote', async (req, res) => {
                 routerPath(srcToken, destToken, inputAmounts, part, flag, 1),
                 routerPath(srcToken, destToken, inputAmounts, part, flag, 2)
             ]); //  depth代表除头尾的特殊转换（aave和compound）中间的遍历深度， 例如 adai => dai => usdt => usdc =>audc， depth=2
-            bestPath = bestPaths[0].returnAmount.isGreaterThan(bestPaths[1].returnAmount) ? bestPaths[0] : bestPaths[1];
+            bestPath = BN(bestPaths[0].returnAmount).isGreaterThan(bestPaths[1].returnAmount) ? bestPaths[0] : bestPaths[1];
         } else {
             bestPath = await routerPath(srcToken, destToken, inputAmounts, part, flag, depth);
         }
@@ -833,7 +755,7 @@ app.get('/quote', async (req, res) => {
         let end2 = new Date().getTime();
         console.log('获取展示信息耗时: ' + (end2 - end) + 'ms');
 
-        const minimumReceived = new BigNumber(display.swaps[0].youGet.toFixed(6))
+        const minimumReceived = BN(display.swaps[0].youGet.toFixed(6))
             .multipliedBy(1000 - slippage)
             .dividedBy(1000);
         result.source_token = srcToken;
@@ -843,9 +765,9 @@ app.get('/quote', async (req, res) => {
         result.swaps = display.swaps;
         result.paths = display.paths;
         result.minimumReceived = minimumReceived.toString();
-        result.estimate_gas = -1;
+        result.estimate_gas = display.estimate_gas;
         result.estimate_cost = display.swaps[0].fees;
-        result.reception = new BigNumber(display.target_token_amount).dividedBy(10 ** display.outputDecimals);
+        result.reception = BN(display.target_token_amount).dividedBy(10 ** display.outputDecimals);
         result.minimum_reception = minimumReceived.toString();
         result.price_impact = display.price_impact;
 
@@ -879,30 +801,33 @@ app.get('/quote', async (req, res) => {
         console.log(err);
         res.send(err);
     }
-
     const end = new Date().getTime();
     console.log('总耗时: ' + (end - start) + 'ms');
 });
 
-
 app.get('/chart', async (req, res) => {
     const start = new Date().getTime();
-
     try {
         const srcToken = req.query.source_token; // 源token
         const destToken = req.query.target_token; // 目标token
         const part = Number(req.query.part) > 100 ? 100 : Number(req.query.part); // 分成几份进行计算
-        const days = isNaN(Number(req.query.days)) ? 30 : Number(req.query.days); // 分成几份进行计算
-        const currency = 'USD';
-        const result = await getChart(srcToken, destToken, days, part, currency);
+        const days = isNaN(Number(req.query.days)) ? 30 : Number(req.query.days); // 日期
+        const result = await getChart(srcToken, destToken, days);
         res.send(result);
     } catch (err) {
         console.log(err);
         res.send(err);
     }
-
     const end = new Date().getTime();
-    console.log('图标总耗时: ' + (end - start) + 'ms');
+    console.log('图标查询总耗时: ' + (end - start) + 'ms');
+});
+
+app.get('/source', async (req, res) => {
+    const chainID = isNaN(Number(req.query.chainID)) ? Number(req.query.chainID) : 1;
+    if (chainID === 1) {
+        res.send(dex_info.dex);
+    }
+    res.send('unsupported chain');
 });
 
 app.get('/source_0x', async (req, res) => {
@@ -952,12 +877,14 @@ app.get('/quote_0x', async (req, res) => {
             params.excludedSources = result.join(',');
         }
 
-        const data = (await axios.get(`https://api.0x.org/swap/v1/quote`, {
-            params,
-            headers: {
-                '0x-api-key': config['0x_apikey']
-            }
-        })).data;
+        const data = (
+            await axios.get(`https://api.0x.org/swap/v1/quote`, {
+                params,
+                headers: {
+                    '0x-api-key': config['0x_apikey']
+                }
+            })
+        ).data;
         let result = {};
         result.source_token = srcToken;
         result.target_token = destToken;
@@ -965,20 +892,24 @@ app.get('/quote_0x', async (req, res) => {
         result.target_token_amount = side === 'SELL' ? data.buyAmount : data.sellAmount;
         result.minimumReceived =
             side === 'SELL'
-                ? new BigNumber(data.buyAmount).multipliedBy(1 - slippage).toString()
-                : new BigNumber(data.sellAmount).multipliedBy(1 - slippage).toString();
+                ? BN(data.buyAmount).multipliedBy(1 - slippage).toString()
+                : BN(data.sellAmount).multipliedBy(1 - slippage).toString();
         result.estimate_gas = data.estimatedGas;
         const ethPrice = await getPrice('ETH', 1);
-        result.estimate_cost = new BigNumber(data.estimatedGas)
+        result.estimate_cost = BN(data.estimatedGas)
             .multipliedBy(data.gasPrice)
             .multipliedBy(ethPrice)
             .dividedBy(10 ** 18)
             .toString();
         const outputDecimals =
             side === 'SELL'
-                ? (destToken === ADDRESS.ETH ? 18 : await Util.getDecimals(destToken, signer))
-                : (srcToken === ADDRESS.ETH ? 18 : await Util.getDecimals(srcToken, signer));
-        result.reception = new BigNumber(result.target_token_amount).dividedBy(10 ** outputDecimals);
+                ? destToken === ADDRESS.ETH
+                    ? 18
+                    : await Util.getDecimals(destToken, signer)
+                : srcToken === ADDRESS.ETH
+                ? 18
+                : await Util.getDecimals(srcToken, signer);
+        result.reception = BN(result.target_token_amount).dividedBy(10 ** outputDecimals);
         result.minimum_reception = result.minimumReceived.toString();
         result.price_impact = data.estimatedPriceImpact;
         result.tx_data = data.data;

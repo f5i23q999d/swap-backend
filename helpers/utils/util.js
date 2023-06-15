@@ -1,7 +1,7 @@
 
 const { ethers } = require("ethers");
 const IERC20 = require("../abi/IERC20.json");
-
+const BigNumber = require('bignumber.js');
 
 class Util {
 
@@ -16,6 +16,10 @@ class Util {
         const erc20 = new ethers.Contract(token, IERC20, signer);
         const symbol = await erc20.symbol();
         return symbol;
+    }
+
+    static BN(value){
+        return new BigNumber(value);
     }
 
 }

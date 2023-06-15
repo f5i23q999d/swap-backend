@@ -6,16 +6,18 @@ const { ethers } = require('ethers');
 const ADDRESS = require('./constant/addresses.js');
 const dodoZooABI = require('./abi/dodoZoo.json');
 const iDODOStableABI = require('./abi/IDODOStable.json');
+const Util = require('./utils/util.js');
+const BN = Util.BN;
 
 function fromWei(numStr, decimals) {
-    return new BigNumber(String(numStr)).div(new BigNumber(10 ** decimals));
+    return BN(String(numStr)).div(BN(10 ** decimals));
 }
 
 class DodoHelper {
     async getOutputByExactInput(tokenIn, tokenOut, amountIn, router, part, signer) {
         try {
             const res = [];
-            amountIn = new BigNumber(amountIn);
+            amountIn = BN(amountIn);
             // First check if it is a v1 pool
             let version = 1;
             const dodoZoo = new ethers.Contract(ADDRESS.DODOZOO, dodoZooABI, signer);
@@ -74,22 +76,22 @@ class DodoHelper {
                 for (let i = 0; i <= part; i++) {
                     let amountIn_part = amountIn.multipliedBy(i).dividedBy(part);
                     if (tokenInIsBase) {
-                        amountIn_part = amountIn_part.dividedBy(new BigNumber(10 ** baseTokenDecimal));
+                        amountIn_part = amountIn_part.dividedBy(BN(10 ** baseTokenDecimal));
                         res.push(
-                            new BigNumber(
+                            BN(
                                 pmmHelper
-                                    .QuerySellBase(new BigNumber(amountIn_part), pmmState)
-                                    .multipliedBy(new BigNumber(10 ** quoteTokenDecimal))
+                                    .QuerySellBase(BN(amountIn_part), pmmState)
+                                    .multipliedBy(BN(10 ** quoteTokenDecimal))
                                     .toFixed(0)
                             )
                         );
                     } else {
-                        amountIn_part = amountIn_part.dividedBy(new BigNumber(10 ** quoteTokenDecimal));
+                        amountIn_part = amountIn_part.dividedBy(BN(10 ** quoteTokenDecimal));
                         res.push(
-                            new BigNumber(
+                            BN(
                                 pmmHelper
-                                    .QuerySellQuote(new BigNumber(amountIn_part), pmmState)
-                                    .multipliedBy(new BigNumber(10 ** baseTokenDecimal))
+                                    .QuerySellQuote(BN(amountIn_part), pmmState)
+                                    .multipliedBy(BN(10 ** baseTokenDecimal))
                                     .toFixed(0)
                             )
                         );
@@ -116,7 +118,7 @@ class DodoHelper {
                     quoteToken = tokenIn;
                     tokenInIsBase = false;
                 } else {
-                    return new Array(Number(part) + 1).fill(new BigNumber(0));
+                    return new Array(Number(part) + 1).fill(BN(0));
                 }
 
                 const baseTokenInstance = new ethers.Contract(baseToken, IERC20, signer);
@@ -144,33 +146,33 @@ class DodoHelper {
                 for (let i = 0; i <= part; i++) {
                     let amountIn_part = amountIn.multipliedBy(i).dividedBy(part);
                     if (tokenInIsBase) {
-                        amountIn_part = amountIn_part.dividedBy(new BigNumber(10 ** baseTokenDecimal));
+                        amountIn_part = amountIn_part.dividedBy(BN(10 ** baseTokenDecimal));
                         res.push(
-                            new BigNumber(
+                            BN(
                                 pmmHelper
-                                    .QuerySellBase(new BigNumber(amountIn_part), pmmState)
-                                    .multipliedBy(new BigNumber(10 ** quoteTokenDecimal))
+                                    .QuerySellBase(BN(amountIn_part), pmmState)
+                                    .multipliedBy(BN(10 ** quoteTokenDecimal))
                                     .toFixed(0)
                             )
                         );
                     } else {
-                        amountIn_part = amountIn_part.dividedBy(new BigNumber(10 ** quoteTokenDecimal));
+                        amountIn_part = amountIn_part.dividedBy(BN(10 ** quoteTokenDecimal));
                         res.push(
-                            new BigNumber(
+                            BN(
                                 pmmHelper
-                                    .QuerySellQuote(new BigNumber(amountIn_part), pmmState)
-                                    .multipliedBy(new BigNumber(10 ** baseTokenDecimal))
+                                    .QuerySellQuote(BN(amountIn_part), pmmState)
+                                    .multipliedBy(BN(10 ** baseTokenDecimal))
                                     .toFixed(0)
                             )
                         );
                     }
                 }
             } else {
-                return new Array(Number(part) + 1).fill(new BigNumber(0));
+                return new Array(Number(part) + 1).fill(BN(0));
             }
             return res;
         } catch (err) {
-            return new Array(Number(part) + 1).fill(new BigNumber(0));
+            return new Array(Number(part) + 1).fill(BN(0));
         }
     }
 
