@@ -967,6 +967,21 @@ app.get('/source_0x', async (req, res) => {
     res.send(list.data.records);
 });
 
+app.get('/chains_0x', async (req, res) => {
+    const result = {
+        chains: [
+            { name: 'Ethereum', logo_url: config.tokenList.eth.logo_url, chainId: 1 },
+            { name: 'BNB Chain', logo_url: config.tokenList.bsc.logo_url, chainId: 56 },
+            { name: 'Polygon', logo_url: config.tokenList.polygon.logo_url, chainId: 137 },
+            { name: 'Optimism', logo_url: config.tokenList.optimism.logo_url, chainId: 10 },
+            { name: 'Arbitrum', logo_url: config.tokenList.arbitrum.logo_url, chainId: 42161 },
+            { name: 'Avalanche', logo_url: config.tokenList.avalanche.logo_url, chainId: 43114 },
+            { name: 'Fantom', logo_url: config.tokenList.fantom.logo_url, chainId: 250 }
+        ]
+    };
+    res.send(result);
+});
+
 app.get('/quote_0x', async (req, res) => {
     try {
         const srcToken = req.query.source_token; // 源token
