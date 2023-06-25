@@ -959,7 +959,6 @@ function swapAPIEndpoints_0x(chainId) {
 
 app.get('/source_0x', async (req, res) => {
     const chainId = isNaN(Number(req.query.chainId)) ? 1 : Number(req.query.chainId);
-    console.log(req.query.chainId);
     const swapAPIEndpoints_prefix = swapAPIEndpoints_0x(chainId);
     if (swapAPIEndpoints_prefix === '') {
         res.send('unsupported chain');
