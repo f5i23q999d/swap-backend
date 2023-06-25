@@ -818,21 +818,20 @@ app.get('/source', async (req, res) => {
     res.send('unsupported chain');
 });
 
-app.get('/tokenList', async (req, res) => {
-    const data = cache.get(`tokenList:${Number(req.query.chainId)}`);
+app.get('/tokens', async (req, res) => {
+    const data = cache.get(`tokens:${Number(req.query.chainId)}`);
     if (data) {
         res.send(data);
     }
     const chainId = isNaN(Number(req.query.chainId)) ? 1 : Number(req.query.chainId);
     const result = await tokenList(chainId);
-    cache.set(`tokenList:${Number(req.query.chainId)}`, result);
+    cache.set(`tokens:${Number(req.query.chainId)}`, result);
     res.send(result);
 });
 
 async function tokenList(chainId) {
     let result = {};
     result.tokenList = [];
-    result.recommend = [];
     let fetchList = [];
     try {
         switch (chainId) {
@@ -924,9 +923,12 @@ async function tokenList(chainId) {
         result.tokenList.push(...fetchList);
         result.tokenList.forEach((item) => {
             if (config.tokenList.eth.recommend.includes(item.symbol)) {
-                result.recommend.push(item);
+                item.isRecommended = true;
+            } else {
+                item.isRecommended = false;
             }
         });
+        result.total = result.tokenList.length;
     } catch (err) {
         console.log(err);
     }
@@ -957,32 +959,35 @@ function swapAPIEndpoints_0x(chainId) {
     }
 }
 
-app.get('/source_0x', async (req, res) => {
+app.get('/0x/sources', async (req, res) => {
     const chainId = isNaN(Number(req.query.chainId)) ? 1 : Number(req.query.chainId);
     const swapAPIEndpoints_prefix = swapAPIEndpoints_0x(chainId);
     if (swapAPIEndpoints_prefix === '') {
         res.send('unsupported chain');
     }
     const list = await axios.get(`${swapAPIEndpoints_prefix}/swap/v1/sources`);
-    res.send(list.data.records);
+    const result = { sources: list.data.records, total: list.data.records.length };
+    res.send(result);
 });
 
-app.get('/chains_0x', async (req, res) => {
+app.get('/0x/chains', async (req, res) => {
+    const chains = [
+        { name: 'Ethereum', logo_url: config.tokenList.eth.logo_url, chainId: 1 },
+        { name: 'BNB Chain', logo_url: config.tokenList.bsc.logo_url, chainId: 56 },
+        { name: 'Polygon', logo_url: config.tokenList.polygon.logo_url, chainId: 137 },
+        { name: 'Optimism', logo_url: config.tokenList.optimism.logo_url, chainId: 10 },
+        { name: 'Arbitrum', logo_url: config.tokenList.arbitrum.logo_url, chainId: 42161 },
+        { name: 'Avalanche', logo_url: config.tokenList.avalanche.logo_url, chainId: 43114 },
+        { name: 'Fantom', logo_url: config.tokenList.fantom.logo_url, chainId: 250 }
+    ];
     const result = {
-        chains: [
-            { name: 'Ethereum', logo_url: config.tokenList.eth.logo_url, chainId: 1 },
-            { name: 'BNB Chain', logo_url: config.tokenList.bsc.logo_url, chainId: 56 },
-            { name: 'Polygon', logo_url: config.tokenList.polygon.logo_url, chainId: 137 },
-            { name: 'Optimism', logo_url: config.tokenList.optimism.logo_url, chainId: 10 },
-            { name: 'Arbitrum', logo_url: config.tokenList.arbitrum.logo_url, chainId: 42161 },
-            { name: 'Avalanche', logo_url: config.tokenList.avalanche.logo_url, chainId: 43114 },
-            { name: 'Fantom', logo_url: config.tokenList.fantom.logo_url, chainId: 250 }
-        ]
+        chains: chains,
+        total: chains.length
     };
     res.send(result);
 });
 
-app.get('/quote_0x', async (req, res) => {
+app.get('/0x/quote', async (req, res) => {
     try {
         const srcToken = req.query.source_token; // 源token
         const destToken = req.query.target_token; // 目标token

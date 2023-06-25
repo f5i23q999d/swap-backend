@@ -152,7 +152,7 @@ chat                      array                    包含若干个对象，每�
 ------------------------------------------------------------------------------------------------------------------------------------
 
 [路径]
-/source_0x
+/0x/sources
 
 [描述]
 返回所有支持的dex
@@ -165,25 +165,12 @@ GET
 chainId                     number                      默认1，代表以太链
 
 [输出样例]
-{
-    "records": [
-        "Beethovenx",
-        "Curve",
-        "Curve_V2",
-        "JetSwap",
-        "MorpheusSwap",
-        "MultiHop",
-        "SpiritSwap",
-        "SpookySwap",
-        "SushiSwap",
-        "Synapse"
-    ]
-}
+{"sources":["0x","Aave_V2","Balancer","Balancer_V2","BancorV3","Compound","CryptoCom","Curve","Curve_V2","DODO","DODO_V2","KyberDMM","KyberElastic","Lido","MakerPsm","MultiHop","Saddle","ShibaSwap","SushiSwap","Synapse","Synthetix","Uniswap","Uniswap_V2","Uniswap_V3"],"total":24}
 
 ------------------------------------------------------------------------------------------------------------------------------------
 
 [路径]
-/quote_0x
+/0x/quote
 
 [method]
 GET
@@ -215,10 +202,10 @@ protocols                   string                      指定流动性协议。
 ------------------------------------------------------------------------------------------------------------------------------------
 
 [路径]
-/tokenList
+/tokens
 
 [描述]
-返回不同链的token列表以及推荐token
+返回不同链的token列表
 
 [method]
 GET
@@ -228,16 +215,15 @@ GET
 chainId                     number                      默认1，代表以太链
 
 [输出样例]
-{"tokenList":[
-  {"chainId":10,"address":"0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE","name":"Optimism","symbol":"OP","decimals":18,"logoURI":"https://file.fxwallet.com/token/2a53bc62dff62b5ee60e2297032990fc9bddf3b80c30e0a3ea8945d447a71cba.svg"},
-  {"chainId":10,"address":"0x1db2466d9f5e10d7090e7152b68d62703a2245f0","name":"Sonne Finance","symbol":"SONNE","decimals":18,"logoURI":"https://assets.coingecko.com/coins/images/27540/thumb/Token1.png?1664422231"}],
-  "recommend":[{"chainId":10,"address":"0xda10009cbd5d07dd0cecc66161fc93d7c9000da1","name":"Dai","symbol":"DAI","decimals":18,"logoURI":"https://assets.coingecko.com/coins/images/9956/thumb/Badge_Dai.png?1687143508"},
-  {"chainId":10,"address":"0x4200000000000000000000000000000000000006","name":"WETH","symbol":"WETH","decimals":18,"logoURI":"https://assets.coingecko.com/coins/images/2518/thumb/weth.png?1628852295"}]}
+{"tokens":[
+  {"chainId":10,"address":"0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE","name":"Optimism","symbol":"OP","decimals":18,"logoURI":"https://file.fxwallet.com/token/2a53bc62dff62b5ee60e2297032990fc9bddf3b80c30e0a3ea8945d447a71cba.svg","isRecommended":true},
+  {"chainId":10,"address":"0x1db2466d9f5e10d7090e7152b68d62703a2245f0","name":"Sonne Finance","symbol":"SONNE","decimals":18,"logoURI":"https://assets.coingecko.com/coins/images/27540/thumb/Token1.png?1664422231","isRecommended":false}],
+  "total":2}
 
 ------------------------------------------------------------------------------------------------------------------------------------
 
 [路径]
-/chains_0x
+/0x/chains
 
 [描述]
 返回支持链的全称、logo链接以及chainId
@@ -246,4 +232,4 @@ chainId                     number                      默认1，代表以太�
 GET
 
 [输出样例]
-{"chains":[{"name":"Ethereum","logo_url":"https://file.fxwallet.com/token/49b2544d7b7a10418b5851aab81e0c1bc48e4138a4f3707bb4f3ea1a8cf26ec6.svg","chainId":1},{"name":"BNB Chain","logo_url":"https://file.fxwallet.com/token/62ad22a04becfde983e3c940113d356e84691c80a882d304840c8162cc8fc394.svg","chainId":56},{"name":"Polygon","logo_url":"https://file.fxwallet.com/token/34ee6b70c50f3f2556796b3c79d3f76cc05c89ecec1bb5b12a6d6cbfae23e058.png","chainId":137},{"name":"Optimism","logo_url":"https://file.fxwallet.com/token/2a53bc62dff62b5ee60e2297032990fc9bddf3b80c30e0a3ea8945d447a71cba.svg","chainId":10},{"name":"Arbitrum","logo_url":"https://file.fxwallet.com/token/cea438da55ced2ac65bea8d4aab84a3b53d723da7c0feed25446f9879ce1433e.svg","chainId":42161},{"name":"Avalanche","logo_url":"https://file.fxwallet.com/1679972090672-avax.png","chainId":43114},{"name":"Fantom","logo_url":"https://file.fxwallet.com/default/1683530682226-ftm.png","chainId":250}]}
+{"chains":[{"name":"Ethereum","logo_url":"https://file.fxwallet.com/token/49b2544d7b7a10418b5851aab81e0c1bc48e4138a4f3707bb4f3ea1a8cf26ec6.svg","chainId":1},{"name":"BNB Chain","logo_url":"https://file.fxwallet.com/token/62ad22a04becfde983e3c940113d356e84691c80a882d304840c8162cc8fc394.svg","chainId":56},{"name":"Polygon","logo_url":"https://file.fxwallet.com/token/34ee6b70c50f3f2556796b3c79d3f76cc05c89ecec1bb5b12a6d6cbfae23e058.png","chainId":137},{"name":"Optimism","logo_url":"https://file.fxwallet.com/token/2a53bc62dff62b5ee60e2297032990fc9bddf3b80c30e0a3ea8945d447a71cba.svg","chainId":10},{"name":"Arbitrum","logo_url":"https://file.fxwallet.com/token/cea438da55ced2ac65bea8d4aab84a3b53d723da7c0feed25446f9879ce1433e.svg","chainId":42161},{"name":"Avalanche","logo_url":"https://file.fxwallet.com/1679972090672-avax.png","chainId":43114},{"name":"Fantom","logo_url":"https://file.fxwallet.com/default/1683530682226-ftm.png","chainId":250}],"total":7}
