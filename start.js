@@ -290,7 +290,7 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
     }
 
     name_string = [];
-    for(let i = 0 ;i<dex_info.dex.length;i++){
+    for (let i = 0; i < dex_info.dex.length; i++) {
         if (bitAt(flag, i) == 1) {
             name_string.push(dex_info.dex[i]);
         }
@@ -332,7 +332,9 @@ async function getDisplayInformation(srcToken, destToken, inputAmounts, bestPath
     start = new Date().getTime();
     const inputPrice = getPrice(
         inputSymbol,
-        BN(inputAmounts).dividedBy(10 ** inputDecimals).toString(),
+        BN(inputAmounts)
+            .dividedBy(10 ** inputDecimals)
+            .toString(),
         signer
     );
     const outputPrice = getPrice(outputSymbol, returnAmount.dividedBy(10 ** outputDecimals).toString(), signer);
@@ -727,7 +729,9 @@ app.get('/quote', async (req, res) => {
                 routerPath(srcToken, destToken, inputAmounts, part, flag, 1),
                 routerPath(srcToken, destToken, inputAmounts, part, flag, 2)
             ]); //  depth代表除头尾的特殊转换（aave和compound）中间的遍历深度， 例如 adai => dai => usdt => usdc =>audc， depth=2
-            bestPath = BN(bestPaths[0].returnAmount).isGreaterThan(bestPaths[1].returnAmount) ? bestPaths[0] : bestPaths[1];
+            bestPath = BN(bestPaths[0].returnAmount).isGreaterThan(bestPaths[1].returnAmount)
+                ? bestPaths[0]
+                : bestPaths[1];
         } else {
             bestPath = await routerPath(srcToken, destToken, inputAmounts, part, flag, depth);
         }
@@ -794,7 +798,7 @@ app.get('/chart', async (req, res) => {
     try {
         const srcToken = req.query.source_token; // 源token
         const destToken = req.query.target_token; // 目标token
-        const part = Number(req.query.part) > 100 ? 100 : Number(req.query.part); // 分成几份进行计算
+        const part = Number(req.query.part) > 100 ? 100 : Number(req.query.part);
         const days = isNaN(Number(req.query.days)) ? 30 : Number(req.query.days); // 日期
         const result = await getChart(srcToken, destToken, days);
         res.send(result);
@@ -807,20 +811,161 @@ app.get('/chart', async (req, res) => {
 });
 
 app.get('/source', async (req, res) => {
-    const chainID = isNaN(Number(req.query.chainID)) ? Number(req.query.chainID) : 1;
-    if (chainID === 1) {
+    const chainId = isNaN(Number(req.query.chainId)) ? Number(req.query.chainId) : 1;
+    if (chainId === 1) {
         res.send(dex_info.dex);
     }
     res.send('unsupported chain');
 });
 
-app.get('/source_0x', async (req, res) => {
-    const chainID = isNaN(Number(req.query.chainID)) ? Number(req.query.chainID) : 1;
-    if (chainID === 1) {
-        const list = await axios.get(`https://api.0x.org/swap/v1/sources`);
-        res.send(list.data.records);
+app.get('/tokenList', async (req, res) => {
+    const data = cache.get(`tokenList:${Number(req.query.chainId)}`);
+    if (data) {
+        res.send(data);
     }
-    res.send('unsupported chain');
+    const chainId = isNaN(Number(req.query.chainId)) ? 1 : Number(req.query.chainId);
+    const result = await tokenList(chainId);
+    cache.set(`tokenList:${Number(req.query.chainId)}`, result);
+    res.send(result);
+});
+
+async function tokenList(chainId) {
+    let result = {};
+    result.tokenList = [];
+    result.recommend = [];
+    let fetchList = [];
+    try {
+        switch (chainId) {
+            case 1: {
+                result.tokenList.push({
+                    chainId: chainId,
+                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                    name: 'Ethereum',
+                    symbol: 'ETH',
+                    decimals: 18,
+                    logoURI: config.tokenList.eth.logo_url
+                });
+                fetchList = (await axios.get(config.tokenList.eth.tokenList_url)).data.tokens;
+                break;
+            }
+            case 56: {
+                result.tokenList.push({
+                    chainId: chainId,
+                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                    name: 'bnb',
+                    symbol: 'BNB',
+                    decimals: 18,
+                    logoURI: config.tokenList.bnb.logo_url
+                });
+                fetchList = (await axios.get(config.tokenList.bnb.tokenList_url)).data.tokens;
+                break;
+            }
+            case 137: {
+                result.tokenList.push({
+                    chainId: chainId,
+                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                    name: 'polygon',
+                    symbol: 'MATIC',
+                    decimals: 18,
+                    logoURI: config.tokenList.polygon.logo_url
+                });
+                fetchList = (await axios.get(config.tokenList.polygon.tokenList_url)).data.tokens;
+                break;
+            }
+            case 43114: {
+                result.tokenList.push({
+                    chainId: chainId,
+                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                    name: 'Avalanche',
+                    symbol: 'AVAX',
+                    decimals: 18,
+                    logoURI: config.tokenList.avalanche.logo_url
+                });
+                fetchList = (await axios.get(config.tokenList.avalanche.tokenList_url)).data.tokens;
+                break;
+            }
+            case 250: {
+                result.tokenList.push({
+                    chainId: chainId,
+                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                    name: 'Fantom',
+                    symbol: 'FTM',
+                    decimals: 18,
+                    logoURI: config.tokenList.fantom.logo_url
+                });
+                fetchList = (await axios.get(config.tokenList.fantom.tokenList_url)).data.tokens;
+                break;
+            }
+            case 10: {
+                result.tokenList.push({
+                    chainId: chainId,
+                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                    name: 'Optimism',
+                    symbol: 'OP',
+                    decimals: 18,
+                    logoURI: config.tokenList.optimism.logo_url
+                });
+                fetchList = (await axios.get(config.tokenList.optimism.tokenList_url)).data.tokens;
+                break;
+            }
+            case 42161: {
+                result.tokenList.push({
+                    chainId: chainId,
+                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                    name: 'Arbitrum',
+                    symbol: 'ETH',
+                    decimals: 18,
+                    logoURI: config.tokenList.arbitrum.logo_url
+                });
+                fetchList = (await axios.get(config.tokenList.arbitrum.tokenList_url)).data.tokens;
+                break;
+            }
+        }
+        result.tokenList.push(...fetchList);
+        result.tokenList.forEach((item) => {
+            if (config.tokenList.eth.recommend.includes(item.symbol)) {
+                result.recommend.push(item);
+            }
+        });
+    } catch (err) {
+        console.log(err);
+    }
+
+    return result;
+}
+
+function swapAPIEndpoints_0x(chainId) {
+    switch (chainId) {
+        case 1:
+            return 'https://api.0x.org';
+        case 5:
+            return 'https://goerli.api.0x.org';
+        case 56:
+            return 'https://bsc.api.0x.org';
+        case 137:
+            return 'https://polygon.api.0x.org';
+        case 43114:
+            return 'https://avalanche.api.0x.org';
+        case 250:
+            return 'https://fantom.api.0x.org';
+        case 10:
+            return 'https://optimism.api.0x.org';
+        case 42161:
+            return 'https://arbitrum.api.0x.org';
+        default:
+            return '';
+    }
+}
+
+app.get('/source_0x', async (req, res) => {
+    const chainId = isNaN(Number(req.query.chainId)) ? 1 : Number(req.query.chainId);
+    console.log(req.query.chainId);
+    const swapAPIEndpoints_prefix = swapAPIEndpoints_0x(chainId);
+    if (swapAPIEndpoints_prefix === '') {
+        res.send('unsupported chain');
+    }
+    const list = await axios.get(`${swapAPIEndpoints_prefix}/swap/v1/sources`);
+    res.send(list.data.records);
 });
 
 app.get('/quote_0x', async (req, res) => {
@@ -831,16 +976,26 @@ app.get('/quote_0x', async (req, res) => {
         const side = req.query.side ? String(req.query.side) : 'SELL';
         const slippage = isNaN(Number(req.query.slippage)) ? 0.03 : Number(req.query.slippage) / 1000; // 滑点
         const senderAddress = req.query.sender_address; // 用户地址
-        //const receiverAddress = req.query.receiver_address;
         const protocols = req.query.protocols;
-        const chainID = 1;
-
+        const chainId = isNaN(Number(req.query.chainId)) ? 1 : Number(req.query.chainId);
+        const swapAPIEndpoints_prefix = swapAPIEndpoints_0x(chainId);
+        if (swapAPIEndpoints_prefix === '') {
+            res.send('unsupported chain');
+        }
         if (Number(inputAmounts) <= 0) {
             throw 'invalid inputAmounts';
         }
 
         if (srcToken === destToken) {
             throw 'source_token should not same as target_token';
+        }
+        const quoteCache = cache.get(
+            `quote_0x:${srcToken}:${destToken}:${inputAmounts}:${side}:${slippage}:${senderAddress}:${protocols}:${chainId}`
+        );
+        if (quoteCache) {
+            res.send(quoteCache);
+            console.log('命中缓存');
+            return;
         }
 
         let params = {};
@@ -851,7 +1006,7 @@ app.get('/quote_0x', async (req, res) => {
         params.affiliateAddress = wallet.address;
         if (protocols) {
             const result = [];
-            const list = (await axios.get(`https://api.0x.org/swap/v1/sources`)).data.records;
+            const list = (await axios.get(`${swapAPIEndpoints_prefix}/swap/v1/sources`)).data.records;
             const words = protocols.split(',');
             list.forEach((item) => {
                 if (!words.includes(item)) {
@@ -862,7 +1017,7 @@ app.get('/quote_0x', async (req, res) => {
         }
 
         const data = (
-            await axios.get(`https://api.0x.org/swap/v1/quote`, {
+            await axios.get(`${swapAPIEndpoints_prefix}/swap/v1/quote`, {
                 params,
                 headers: {
                     '0x-api-key': config['0x_apikey']
@@ -876,8 +1031,12 @@ app.get('/quote_0x', async (req, res) => {
         result.target_token_amount = side === 'SELL' ? data.buyAmount : data.sellAmount;
         result.minimumReceived =
             side === 'SELL'
-                ? BN(data.buyAmount).multipliedBy(1 - slippage).toString()
-                : BN(data.sellAmount).multipliedBy(1 - slippage).toString();
+                ? BN(data.buyAmount)
+                      .multipliedBy(1 - slippage)
+                      .toString()
+                : BN(data.sellAmount)
+                      .multipliedBy(1 - slippage)
+                      .toString();
         result.estimate_gas = data.estimatedGas;
         const ethPrice = await getPrice('ETH', 1);
         result.estimate_cost = BN(data.estimatedGas)
@@ -898,6 +1057,10 @@ app.get('/quote_0x', async (req, res) => {
         result.price_impact = data.estimatedPriceImpact;
         result.tx_data = data.data;
         res.send(result);
+        quoteCache.set(
+            `quote_0x:${srcToken}:${destToken}:${inputAmounts}:${side}:${slippage}:${senderAddress}:${protocols}:${chainId}`,
+            result
+        );
     } catch (err) {
         console.log(err);
         res.send(nullResult());

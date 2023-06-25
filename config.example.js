@@ -1,17 +1,56 @@
 module.exports = {
-    "rpc" : "http://127.0.0.1:8545",
-    //"rpc" : "http://8.212.8.124:8545",
-    "port" : 3000,
-    "privateKey": "",    
-    "FXSWAP_ADDRESS": "0xcA3cE6bf0CB2bbaC5dF3874232AE3F5b67C6b146",
-    "uniswapV2Handler_ADDRESS": "0x9cBbA6CDA09C7dadA8343C4076c21eE06CCa4836",
-    "uniswapV3Handler_ADDRESS": "0xbA3981771AB991960028B2F83ae83664Fd003F61",
-    "aaveV2Handler_ADDRESS": "0xF39FEF928BECF01F045FD609eb44C838ea37325b",
-    "dodoHandler_ADDRESS": "0x4635a010Be2707a3FB9c3467Fc615202468BC51E",
-    "compoundHandler_ADDRESS": "",
-    "cryptocompare_apikey": "",
-    "0x_apikey": "",
-    "0x_ADDRESS": "0xdef1c0ded9bec7f1a1670819833240f027b25eff"
-
-}
-
+    rpc: 'http://127.0.0.1:8545',
+    port: 3000,
+    privateKey: '',
+    FXSWAP_ADDRESS: '0xcA3cE6bf0CB2bbaC5dF3874232AE3F5b67C6b146',
+    uniswapV2Handler_ADDRESS: '0x9cBbA6CDA09C7dadA8343C4076c21eE06CCa4836',
+    uniswapV3Handler_ADDRESS: '0xbA3981771AB991960028B2F83ae83664Fd003F61',
+    aaveV2Handler_ADDRESS: '0xF39FEF928BECF01F045FD609eb44C838ea37325b',
+    dodoHandler_ADDRESS: '0x4635a010Be2707a3FB9c3467Fc615202468BC51E',
+    compoundHandler_ADDRESS: '',
+    cryptocompare_apikey: '',
+    '0x_apikey': '',
+    '0x_ADDRESS': '0xdef1c0ded9bec7f1a1670819833240f027b25eff',
+    tokenList: {
+        eth: {
+            tokenList_url: 'https://tokens.coingecko.com/uniswap/all.json',
+            logo_url:
+                'https://file.fxwallet.com/token/49b2544d7b7a10418b5851aab81e0c1bc48e4138a4f3707bb4f3ea1a8cf26ec6.svg',
+            recommend: ['ETH', 'WETH', 'USDT', 'USDC', 'DAI', 'WBTC']
+        },
+        bsc: {
+            tokenList_url: 'https://tokens.coingecko.com/binance-smart-chain/all.json',
+            logo_url:
+                'https://file.fxwallet.com/token/62ad22a04becfde983e3c940113d356e84691c80a882d304840c8162cc8fc394.svg',
+            recommend: ['BNB', 'WBNB', 'WETH', 'USDT', 'USDC', 'DAI', 'WBTC']
+        },
+        polygon: {
+            tokenList_url: 'https://tokens.coingecko.com/polygon-pos/all.json',
+            logo_url:
+                'https://file.fxwallet.com/token/34ee6b70c50f3f2556796b3c79d3f76cc05c89ecec1bb5b12a6d6cbfae23e058.png',
+            recommend: ['MATIC', 'WMATIC', 'WETH', 'USDT', 'USDC', 'DAI', 'WBTC']
+        },
+        avalanche: {
+            tokenList_url: 'https://tokens.coingecko.com/avalanche/all.json',
+            logo_url: 'https://file.fxwallet.com/1679972090672-avax.png',
+            recommend: ['AVAX', 'WAVAX', 'WETH', 'USDT', 'USDC', 'DAI', 'WBTC']
+        },
+        fantom: {
+            tokenList_url: 'https://tokens.coingecko.com/fantom/all.json',
+            logo_url: 'https://file.fxwallet.com/default/1683530682226-ftm.png',
+            recommend: ['FTM', 'WFTM', 'WETH', 'USDT', 'USDC', 'DAI', 'WBTC']
+        },
+        optimism: {
+            tokenList_url: 'https://tokens.coingecko.com/optimistic-ethereum/all.json',
+            logo_url:
+                'https://file.fxwallet.com/token/2a53bc62dff62b5ee60e2297032990fc9bddf3b80c30e0a3ea8945d447a71cba.svg',
+            recommend: ['OP', 'WETH', 'USDT', 'USDC', 'DAI', 'WBTC']
+        },
+        arbitrum: {
+            tokenList_url: 'https://tokens.coingecko.com/arbitrum-one/all.json',
+            logo_url:
+                'https://file.fxwallet.com/token/cea438da55ced2ac65bea8d4aab84a3b53d723da7c0feed25446f9879ce1433e.svg',
+            recommend: ['WETH', 'USDT', 'USDC', 'DAI', 'WBTC']
+        }
+    }
+};
