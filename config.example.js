@@ -1,5 +1,15 @@
 module.exports = {
-    rpc: 'http://127.0.0.1:8545',
+    port: 3000,
+    rpcs: {
+        eth: 'https://ethereum.blockpi.network/v1/rpc/',
+        bsc: 'https://bsc.blockpi.network/v1/rpc/',
+        polygon: 'https://polygon.blockpi.network/v1/rpc/',
+        avalanche: 'https://avalanche.blockpi.network/v1/rpc/',
+        fantom: 'https://fantom.blockpi.network/v1/rpc/',
+        optimism: 'https://optimism.blockpi.network/v1/rpc/',
+        avalanche: 'https://avalanche.blockpi.network/v1/rpc/',
+        arbitrum: 'https://arbitrum.blockpi.network/v1/rpc/'
+    },
     port: 3000,
     privateKey: '',
     FXSWAP_ADDRESS: '0xcA3cE6bf0CB2bbaC5dF3874232AE3F5b67C6b146',

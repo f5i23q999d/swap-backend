@@ -4,7 +4,7 @@
 npm install
 ```
 
-修改配置文件config.js中的rpc为：
+修改配置文件config.js中的rpcs.eth为：
 ```shell
 http://8.212.8.124:8545
 ```

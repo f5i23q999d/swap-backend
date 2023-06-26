@@ -5,7 +5,7 @@ const cors = require('cors');
 const config = require('./config');
 const Cache = require('./helpers/utils/cache');
 const port = config.port;
-const provider = new ethers.providers.JsonRpcProvider(config.rpc);
+const provider = new ethers.providers.JsonRpcProvider(config.rpcs.eth);
 const wallet = new ethers.Wallet(config.privateKey, provider);
 const axios = require('axios');
 const signer = provider.getSigner(wallet.address);
@@ -671,6 +671,46 @@ async function getPrice(token, amount) {
     }
 }
 
+async function getETHPrice(amount, chainId = 1) {
+    let token = 'ETH';
+    try {
+        switch (chainId) {
+            case 1:
+                token = 'ETH';
+                break;
+            case 56:
+                token = 'BNB';
+                break;
+            case 137:
+                token = 'MATIC';
+                break;
+            case 43114:
+                token = 'AVAX';
+                break;
+            case 250:
+                token = 'FTM';
+                break;
+            case 10:
+                token = 'OP';
+                break;
+            case 42161:
+                token = 'ETH';
+                break;
+        }
+        const result = await axios.get(`https://min-api.cryptocompare.com/data/price`, {
+            params: {
+                fsym: token,
+                tsyms: 'USD',
+                api_key: config.cryptocompare_apikey
+            }
+        });
+        return BN(amount).multipliedBy(result.data.USD);
+    } catch (err) {
+        console.log(err);
+        return BN(0);
+    }
+}
+
 function nullResult() {
     let result = {};
     result.source_token = ADDRESS.NULL;
@@ -959,6 +999,37 @@ function swapAPIEndpoints_0x(chainId) {
     }
 }
 
+function getSignerByChainId(chainId) {
+    let rpc_url = '';
+    switch (chainId) {
+        case 1:
+            rpc_url = config.rpcs.eth;
+            break;
+        case 56:
+            rpc_url = config.rpcs.bsc;
+            break;
+        case 137:
+            rpc_url = config.rpcs.polygon;
+            break;
+        case 43114:
+            rpc_url = config.rpcs.avalanche;
+            break;
+        case 250:
+            rpc_url = config.rpcs.fantom;
+            break;
+        case 10:
+            rpc_url = config.rpcs.optimism;
+            break;
+        case 42161:
+            rpc_url = config.rpcs.arbitrum;
+            break;
+    }
+    const provider = new ethers.providers.JsonRpcProvider(rpc_url);
+    const wallet = new ethers.Wallet(config.privateKey, provider);
+    const signer = provider.getSigner(wallet.address);
+    return signer;
+}
+
 app.get('/0x/sources', async (req, res) => {
     const chainId = isNaN(Number(req.query.chainId)) ? 1 : Number(req.query.chainId);
     const swapAPIEndpoints_prefix = swapAPIEndpoints_0x(chainId);
@@ -997,6 +1068,7 @@ app.get('/0x/quote', async (req, res) => {
         const senderAddress = req.query.sender_address; // 用户地址
         const protocols = req.query.protocols;
         const chainId = isNaN(Number(req.query.chainId)) ? 1 : Number(req.query.chainId);
+        let paraProtocols = null; // for paraswap api query
         const swapAPIEndpoints_prefix = swapAPIEndpoints_0x(chainId);
         if (swapAPIEndpoints_prefix === '') {
             res.send('unsupported chain');
@@ -1004,7 +1076,6 @@ app.get('/0x/quote', async (req, res) => {
         if (Number(inputAmounts) <= 0) {
             throw 'invalid inputAmounts';
         }
-
         if (srcToken === destToken) {
             throw 'source_token should not same as target_token';
         }
@@ -1016,8 +1087,29 @@ app.get('/0x/quote', async (req, res) => {
             console.log('命中缓存');
             return;
         }
-
-        let params = {};
+        const signer = getSignerByChainId(chainId); // Obtain signer according to different chains
+        const base_queries = [
+            side === 'SELL'
+                ? srcToken === ADDRESS.ETH
+                    ? 18
+                    : Util.getDecimals(srcToken, signer)
+                : destToken === ADDRESS.ETH
+                ? 18
+                : Util.getDecimals(destToken, signer),
+            side === 'SELL'
+                ? destToken === ADDRESS.ETH
+                    ? 18
+                    : Util.getDecimals(destToken, signer)
+                : srcToken === ADDRESS.ETH
+                ? 18
+                : Util.getDecimals(srcToken, signer),
+            getETHPrice(1, chainId),
+            axios.get(`${swapAPIEndpoints_prefix}/swap/v1/sources`)
+        ]; // concurrent processing
+        const base_queries_result = await Promise.all(base_queries);
+        const inputDecimals = base_queries_result[0];
+        const outputDecimals = base_queries_result[1];
+        let params = {}; // for 0x api query
         params.sellToken = srcToken;
         params.buyToken = destToken;
         side === 'SELL' ? (params.sellAmount = inputAmounts) : (params.buyAmount = inputAmounts);
@@ -1025,58 +1117,133 @@ app.get('/0x/quote', async (req, res) => {
         params.affiliateAddress = wallet.address;
         if (protocols) {
             const result = [];
-            const list = (await axios.get(`${swapAPIEndpoints_prefix}/swap/v1/sources`)).data.records;
+            paraProtocols = [];
+            const list = base_queries_result[3].data.records;
             const words = protocols.split(',');
             list.forEach((item) => {
                 if (!words.includes(item)) {
                     result.push(item);
                 }
             });
+            words.forEach((item) => {
+                paraProtocols.push(item.replace('_', ''));
+            });
             params.excludedSources = result.join(',');
         }
 
-        const data = (
-            await axios.get(`${swapAPIEndpoints_prefix}/swap/v1/quote`, {
+        let paraParams = {}; // for paraSwap api query
+        paraParams.srcToken = srcToken;
+        paraParams.destToken = destToken;
+        paraParams.amount = inputAmounts;
+        paraParams.srcDecimals = side === 'SELL' ? inputDecimals : outputDecimals;
+        paraParams.destDecimals = 'SELL' ? outputDecimals : inputDecimals;
+        paraParams.side = side;
+        paraParams.otherExchangePrices = true;
+        paraParams.userAddress = '0x0000000000000000000000000000000000000000';
+        paraParams.network = chainId;
+        paraParams.maxImpact = 100;
+        if (paraProtocols) {
+            paraParams.excludeDEXS = false;
+            paraParams.includeDEXS = paraProtocols.join(',');
+        }
+        const core_queries = [
+            axios.get(`${swapAPIEndpoints_prefix}/swap/v1/quote`, {
                 params,
                 headers: {
                     '0x-api-key': config['0x_apikey']
                 }
+            }),
+            axios.get(`https://api.paraswap.io/prices/`, {
+                params: paraParams
             })
-        ).data;
+        ]; // concurrent processing
+        const core_queries_result = await Promise.all(core_queries);
+        const data = core_queries_result[0].data;
+        const paraData = core_queries_result[1].data;
         let result = {};
         result.source_token = srcToken;
         result.target_token = destToken;
         result.source_token_amount = inputAmounts;
         result.target_token_amount = side === 'SELL' ? data.buyAmount : data.sellAmount;
+        const destDecimals = paraParams.destDecimals;
         result.minimumReceived =
             side === 'SELL'
                 ? BN(data.buyAmount)
                       .multipliedBy(1 - slippage)
+                      .dividedBy(10 ** destDecimals)
                       .toString()
                 : BN(data.sellAmount)
                       .multipliedBy(1 - slippage)
+                      .dividedBy(10 ** destDecimals)
                       .toString();
         result.estimate_gas = data.estimatedGas;
-        const ethPrice = await getPrice('ETH', 1);
+        const ethPrice = base_queries_result[2];
         result.estimate_cost = BN(data.estimatedGas)
             .multipliedBy(data.gasPrice)
             .multipliedBy(ethPrice)
             .dividedBy(10 ** 18)
             .toString();
-        const outputDecimals =
-            side === 'SELL'
-                ? destToken === ADDRESS.ETH
-                    ? 18
-                    : await Util.getDecimals(destToken, signer)
-                : srcToken === ADDRESS.ETH
-                ? 18
-                : await Util.getDecimals(srcToken, signer);
         result.reception = BN(result.target_token_amount).dividedBy(10 ** outputDecimals);
         result.minimum_reception = result.minimumReceived.toString();
         result.price_impact = data.estimatedPriceImpact;
         result.tx_data = data.data;
+        const swaps = [];
+        swaps.push({
+            name: 'FxSwap',
+            price: BN(result.target_token_amount)
+                .dividedBy(10 ** outputDecimals)
+                .dividedBy(BN(result.source_token_amount).dividedBy(10 ** inputDecimals))
+                .toString(),
+            youGet: result.reception,
+            fees: result.estimate_cost
+        });
+        for (const other of paraData.priceRoute.others) {
+            swaps.push({
+                name: other.exchange,
+                price: BN(side === 'SELL' ? other.destAmount : other.srcAmount)
+                    .dividedBy(10 ** outputDecimals)
+                    .dividedBy(BN(side === 'SELL' ? other.srcAmount : other.destAmount).dividedBy(10 ** inputDecimals))
+                    .toString(),
+                youGet:
+                    side === 'SELL'
+                        ? BN(other.destAmount)
+                              .dividedBy(10 ** destDecimals)
+                              .toString()
+                        : BN(other.srcAmount)
+                              .dividedBy(10 ** destDecimals)
+                              .toString(),
+                fees: other.data.gasUSD
+            });
+        }
+        const paths = [[[]]];
+        for (let i = 0; i < data.sources.length; i++) {
+            if (Number(data.sources[i].proportion) > 0) {
+                paths[0][0].push({
+                    name: data.sources[i].name,
+                    part: Number(data.sources[i].proportion),
+                    source_token: side === 'SELL' ? srcToken : destToken,
+                    target_token: side === 'SELL' ? destToken : srcToken
+                });
+            }
+        }
+        let distribution_count = 0;
+        for (let i = 0; i < paths[0][0].length; i++) {
+            distribution_count += Number(paths[0][0][i].part);
+        }
+        for (let i = 0; i < paths[0][0].length; i++) {
+            paths[0][0][i].part = Math.round((Number(paths[0][0][i].part) / distribution_count) * 100);
+        }
+        for (let i = 1; i < swaps.length; i++) {
+            if (swaps[i].name === paths[0][0][0].name.replace('_', '')) {
+                // data align
+                swaps[i].price = swaps[0].price;
+                swaps[i].youGet = swaps[0].youGet;
+            }
+        }
+        result.swaps = swaps;
+        result.paths = paths;
         res.send(result);
-        quoteCache.set(
+        cache.set(
             `quote_0x:${srcToken}:${destToken}:${inputAmounts}:${side}:${slippage}:${senderAddress}:${protocols}:${chainId}`,
             result
         );
