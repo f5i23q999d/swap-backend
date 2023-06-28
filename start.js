@@ -19,6 +19,7 @@ const Uniswapv2helper = require('./helpers/uniswapv2helper');
 const Dodohelper = require('./helpers/dodohelper.js');
 //const Compoundhelper = require("./helpers/compoundhelper.js");
 const Util = require('./helpers/utils/util.js');
+const errCode = require('./helpers/utils/errorCode');
 
 const uniswapv3_fee = 3000;
 const gwei = 30;
@@ -843,8 +844,7 @@ app.get('/chart', async (req, res) => {
         const result = await getChart(srcToken, destToken, days);
         res.send(result);
     } catch (err) {
-        console.log(err);
-        res.send(err);
+        res.status(500).send({ message: 'unhandled error', detail: err });
     }
     const end = new Date().getTime();
     console.log('图标查询总耗时: ' + (end - start) + 'ms');
@@ -970,7 +970,7 @@ async function tokenList(chainId) {
         });
         result.total = result.tokenList.length;
     } catch (err) {
-        console.log(err);
+        res.status(500).send({ message: 'unhandled error', detail: err });
     }
 
     return result;
@@ -1034,7 +1034,9 @@ app.get('/0x/sources', async (req, res) => {
     const chainId = isNaN(Number(req.query.chainId)) ? 1 : Number(req.query.chainId);
     const swapAPIEndpoints_prefix = swapAPIEndpoints_0x(chainId);
     if (swapAPIEndpoints_prefix === '') {
-        res.send('unsupported chain');
+        const err = errCode[40003];
+        res.status(err.statusCode).send({ message: err.msg });
+        return;
     }
     const list = await axios.get(`${swapAPIEndpoints_prefix}/swap/v1/sources`);
     const result = { sources: list.data.records, total: list.data.records.length };
@@ -1071,13 +1073,13 @@ app.get('/0x/quote', async (req, res) => {
         let paraProtocols = null; // for paraswap api query
         const swapAPIEndpoints_prefix = swapAPIEndpoints_0x(chainId);
         if (swapAPIEndpoints_prefix === '') {
-            res.send('unsupported chain');
+            throw 40003;
         }
         if (Number(inputAmounts) <= 0) {
-            throw 'invalid inputAmounts';
+            throw 40000;
         }
         if (srcToken === destToken) {
-            throw 'source_token should not same as target_token';
+            throw 40001;
         }
         const quoteCache = cache.get(
             `quote_0x:${srcToken}:${destToken}:${inputAmounts}:${side}:${slippage}:${senderAddress}:${protocols}:${chainId}`
@@ -1248,8 +1250,13 @@ app.get('/0x/quote', async (req, res) => {
             result
         );
     } catch (err) {
-        console.log(err);
-        res.send(nullResult());
+        for (const key in errCode) {
+            if (Number(key) === err) {
+                res.status(errCode[key].statusCode).send({ message: errCode[key].msg });
+                return;
+            }
+        }
+        res.status(500).send({ message: 'unhandled error', detail: err });
     }
 });
 
