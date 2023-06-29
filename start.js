@@ -1030,6 +1030,26 @@ function getSignerByChainId(chainId) {
     return signer;
 }
 
+function getProxyAddressByChainId(chainId) {
+    switch (Number(chainId)) {
+        case 1:
+            return config['0x_Proxy_Addresses'].eth;
+        case 56:
+            return config['0x_Proxy_Addresses'].bsc;
+        case 137:
+            return config['0x_Proxy_Addresses'].polygon;
+        case 43114:
+            return config['0x_Proxy_Addresses'].avalanche;
+        case 250:
+            return config['0x_Proxy_Addresses'].fantom;
+        case 10:
+            return config['0x_Proxy_Addresses'].optimism;
+        case 42161:
+            return config['0x_Proxy_Addresses'].arbitrum;
+    }
+    return '';
+}
+
 app.get('/0x/sources', async (req, res) => {
     const chainId = isNaN(Number(req.query.chainId)) ? 1 : Number(req.query.chainId);
     const swapAPIEndpoints_prefix = swapAPIEndpoints_0x(chainId);
@@ -1290,6 +1310,7 @@ app.get('/0x/quote', async (req, res) => {
         }
         result.swaps = swaps;
         result.paths = paths;
+        result.to = getProxyAddressByChainId(chainId);
         res.send(result);
         cache.set(
             `quote_0x:${srcToken}:${destToken}:${inputAmounts}:${side}:${slippage}:${senderAddress}:${protocols}:${chainId}`,

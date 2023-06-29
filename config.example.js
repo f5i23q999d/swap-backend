@@ -28,7 +28,15 @@ module.exports = {
     compoundHandler_ADDRESS: '',
     cryptocompare_apikey: '',
     '0x_apikey': '',
-    '0x_ADDRESS': '0xdef1c0ded9bec7f1a1670819833240f027b25eff',
+    '0x_Proxy_Addresses': {
+        eth: '0xdef1c0ded9bec7f1a1670819833240f027b25eff',
+        polygon: '0xdef1c0ded9bec7f1a1670819833240f027b25eff',
+        bsc: '0xdef1c0ded9bec7f1a1670819833240f027b25eff',
+        optimism: '0xdef1abe32c034e558cdd535791643c58a13acc10',
+        fantom: '0xdef189deaef76e379df891899eb5a00a94cbc250',
+        avalanche: '0xdef1c0ded9bec7f1a1670819833240f027b25eff',
+        arbitrum: '0xdef1c0ded9bec7f1a1670819833240f027b25eff'
+    },
     tokenList: {
         eth: {
             tokenList_url: 'https://tokens.coingecko.com/uniswap/all.json',
