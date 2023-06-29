@@ -1043,15 +1043,61 @@ app.get('/0x/sources', async (req, res) => {
     res.send(result);
 });
 
+function toHex(value) {
+    return '0x' + Number(value).toString(16);
+}
+
 app.get('/0x/chains', async (req, res) => {
     const chains = [
-        { name: 'Ethereum', logo_url: config.tokenList.eth.logo_url, chainId: 1 },
-        { name: 'BNB Chain', logo_url: config.tokenList.bsc.logo_url, chainId: 56 },
-        { name: 'Polygon', logo_url: config.tokenList.polygon.logo_url, chainId: 137 },
-        { name: 'Optimism', logo_url: config.tokenList.optimism.logo_url, chainId: 10 },
-        { name: 'Arbitrum', logo_url: config.tokenList.arbitrum.logo_url, chainId: 42161 },
-        { name: 'Avalanche', logo_url: config.tokenList.avalanche.logo_url, chainId: 43114 },
-        { name: 'Fantom', logo_url: config.tokenList.fantom.logo_url, chainId: 250 }
+        {
+            name: 'Ethereum',
+            rpc: config.publicRpcs.eth,
+            token: 'ETH',
+            logo_url: config.tokenList.eth.logo_url,
+            chainId: toHex(1)
+        },
+        {
+            name: 'BNB Chain',
+            rpc: config.publicRpcs.bsc,
+            token: 'BNB',
+            logo_url: config.tokenList.bsc.logo_url,
+            chainId: toHex(56)
+        },
+        {
+            name: 'Polygon',
+            rpc: config.publicRpcs.polygon,
+            token: 'MATIC',
+            logo_url: config.tokenList.polygon.logo_url,
+            chainId: toHex(137)
+        },
+        {
+            name: 'Optimism',
+            rpc: config.publicRpcs.optimism,
+            token: 'OP',
+            logo_url: config.tokenList.optimism.logo_url,
+            chainId: toHex(10)
+        },
+        {
+            name: 'Arbitrum',
+            rpc: config.publicRpcs.arbitrum,
+            token: 'ARB',
+            logo_url: config.tokenList.arbitrum.logo_url,
+            chainId: toHex(42161)
+        },
+        {
+            name: 'Avalanche',
+            rpc: config.publicRpcs.avalanche,
+            token: 'AVAX',
+            logo_url: config.tokenList.avalanche.logo_url,
+            chainId: toHex(43114)
+        },
+        {
+            name: 'Fantom',
+            rpc: config.publicRpcs.fantom,
+            token: 'FTM',
+            logo_url: config.tokenList.fantom.logo_url,
+            chainId: toHex(250)
+        }
     ];
     const result = {
         chains: chains,

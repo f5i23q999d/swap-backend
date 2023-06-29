@@ -1,5 +1,14 @@
 module.exports = {
     port: 3000,
+    publicRpcs: {
+        eth: 'https://rpc.ankr.com/eth',
+        bsc: 'https://rpc.ankr.com/bsc',
+        polygon: 'https://rpc.ankr.com/polygon',
+        avalanche: 'https://rpc.ankr.com/avalanche',
+        fantom: 'https://rpc.ankr.com/fantom',
+        optimism: 'https://rpc.ankr.com/optimism',
+        arbitrum: 'https://rpc.ankr.com/arbitrum'
+    },
     rpcs: {
         eth: 'https://ethereum.blockpi.network/v1/rpc/',
         bsc: 'https://bsc.blockpi.network/v1/rpc/',
@@ -7,7 +16,6 @@ module.exports = {
         avalanche: 'https://avalanche.blockpi.network/v1/rpc/',
         fantom: 'https://fantom.blockpi.network/v1/rpc/',
         optimism: 'https://optimism.blockpi.network/v1/rpc/',
-        avalanche: 'https://avalanche.blockpi.network/v1/rpc/',
         arbitrum: 'https://arbitrum.blockpi.network/v1/rpc/'
     },
     port: 3000,
