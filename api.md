@@ -136,6 +136,7 @@ GET
 source_token                string            √         要出售的代币的合约地址
 target_token                string            √         要购买的代币的合约地址
 days                        integer                     图表范围，默认30天数据， 范围有[0.5,1,3,7,30]
+chainId                     number                      默认1，代表以太链
 
 
 

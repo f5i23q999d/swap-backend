@@ -11,6 +11,7 @@ const axios = require('axios');
 const signer = provider.getSigner(wallet.address);
 const MAX_INT = '115792089237316195423570985008687907853269984665640564039457584007913129639934';
 const ADDRESS = require('./helpers/constant/addresses');
+const CONSTANTS = require('./helpers/constant/constants');
 
 const FXSWAP_ABI = require('./helpers/abi/fxswap.json');
 const AaveV2helper = require('./helpers/aavev2helper');
@@ -96,21 +97,59 @@ function findBestDistributionWithBigNumber(s, amounts) {
     return { returnAmount, distribution };
 }
 
-async function getChart(tokenIn, tokenOut, days) {
+async function getChart(tokenIn, tokenOut, days, chainId) {
     try {
+        let provider = new ethers.providers.JsonRpcProvider(config.rpcs.eth);
+        let chain = 'eth';
+        switch (chainId) {
+            case 1:
+                provider = new ethers.providers.JsonRpcProvider(config.rpcs.eth);
+                chain = 'eth';
+                break;
+            case 56:
+                provider = new ethers.providers.JsonRpcProvider(config.rpcs.bsc);
+                chain = 'bsc';
+                break;
+            case 137:
+                provider = new ethers.providers.JsonRpcProvider(config.rpcs.polygon);
+                chain = 'polygon';
+                break;
+            case 43114:
+                provider = new ethers.providers.JsonRpcProvider(config.rpcs.avalanche);
+                chain = 'polygon';
+                break;
+            case 250:
+                provider = new ethers.providers.JsonRpcProvider(config.rpcs.fantom);
+                chain = 'fantom';
+                break;
+            case 10:
+                provider = new ethers.providers.JsonRpcProvider(config.rpcs.optimism);
+                chain = 'optimism';
+                break;
+            case 42161:
+                provider = new ethers.providers.JsonRpcProvider(config.rpcs.arbitrum);
+                chain = 'arbitrum';
+                break;
+        }
+        let symbol1 = null;
+        let symbol2 = null;
         if (tokenIn === ADDRESS.ETH) {
-            tokenIn = ADDRESS.WETH;
+            symbol1 = CONSTANTS.ETH_SYMBOL[chain];
         }
         if (tokenOut === ADDRESS.ETH) {
-            tokenOut = ADDRESS.WETH;
+            symbol2 = CONSTANTS.ETH_SYMBOL[chain];
         }
-
-        const symbol1 = await Util.getSymbol(tokenIn, signer);
-        const symbol2 = await Util.getSymbol(tokenOut, signer);
+        const wallet = new ethers.Wallet(config.privateKey, provider);
+        const signer = provider.getSigner(wallet.address);
+        if (!symbol1) {
+            symbol1 = await Util.getSymbol(tokenIn, signer);
+        }
+        if (!symbol2) {
+            symbol2 = await Util.getSymbol(tokenOut, signer);
+        }
         const api_key = config.cryptocompare_apikey;
         let limit;
         let url;
-
         if (days === 0.5) {
             limit = 12;
             url = `https://min-api.cryptocompare.com/data/v2/histohour?fsym=${symbol1}&tsym=${symbol2}&aggregate=1&limit=${limit}&api_key=${api_key}`;
@@ -145,7 +184,7 @@ async function getChart(tokenIn, tokenOut, days) {
         result.currentPrice = data[data.length - 1].close;
         return result;
     } catch (err) {
-        //
+        console.log(err);
         let result = {};
         result.chart = [];
         for (let i = 0; i < 30; i++) {
@@ -841,7 +880,8 @@ app.get('/chart', async (req, res) => {
         const destToken = req.query.target_token; // 目标token
         const part = Number(req.query.part) > 100 ? 100 : Number(req.query.part);
         const days = isNaN(Number(req.query.days)) ? 30 : Number(req.query.days); // 日期
-        const result = await getChart(srcToken, destToken, days);
+        const chainId = isNaN(Number(req.query.chainId)) ? 1 : Number(req.query.chainId);
+        const result = await getChart(srcToken, destToken, days, chainId);
         res.send(result);
     } catch (err) {
         res.status(500).send({ message: 'unhandled error', detail: err });
