@@ -859,119 +859,121 @@ app.get('/source', async (req, res) => {
 });
 
 app.get('/tokens', async (req, res) => {
-    const data = cache.get(`tokens:${Number(req.query.chainId)}`);
-    if (data) {
-        res.send(data);
+    try {
+        const data = cache.get(`tokens:${Number(req.query.chainId)}`);
+        if (data) {
+            res.send(data);
+        }
+        const chainId = isNaN(Number(req.query.chainId)) ? 1 : Number(req.query.chainId);
+        const result = await tokenList(chainId);
+        cache.set(`tokens:${Number(req.query.chainId)}`, result);
+        res.send(result);
+    } catch (err) {
+        //console.log(err);
+        res.status(500).send({ message: 'unhandled error', detail: err.message });
     }
-    const chainId = isNaN(Number(req.query.chainId)) ? 1 : Number(req.query.chainId);
-    const result = await tokenList(chainId);
-    cache.set(`tokens:${Number(req.query.chainId)}`, result);
-    res.send(result);
 });
 
 async function tokenList(chainId) {
     let result = {};
     result.tokenList = [];
     let fetchList = [];
-    try {
-        switch (chainId) {
-            case 1: {
-                result.tokenList.push({
-                    chainId: chainId,
-                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                    name: 'Ethereum',
-                    symbol: 'ETH',
-                    decimals: 18,
-                    logoURI: config.tokenList.eth.logo_url
-                });
-                fetchList = (await axios.get(config.tokenList.eth.tokenList_url)).data.tokens;
-                break;
-            }
-            case 56: {
-                result.tokenList.push({
-                    chainId: chainId,
-                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                    name: 'bnb',
-                    symbol: 'BNB',
-                    decimals: 18,
-                    logoURI: config.tokenList.bnb.logo_url
-                });
-                fetchList = (await axios.get(config.tokenList.bnb.tokenList_url)).data.tokens;
-                break;
-            }
-            case 137: {
-                result.tokenList.push({
-                    chainId: chainId,
-                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                    name: 'polygon',
-                    symbol: 'MATIC',
-                    decimals: 18,
-                    logoURI: config.tokenList.polygon.logo_url
-                });
-                fetchList = (await axios.get(config.tokenList.polygon.tokenList_url)).data.tokens;
-                break;
-            }
-            case 43114: {
-                result.tokenList.push({
-                    chainId: chainId,
-                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                    name: 'Avalanche',
-                    symbol: 'AVAX',
-                    decimals: 18,
-                    logoURI: config.tokenList.avalanche.logo_url
-                });
-                fetchList = (await axios.get(config.tokenList.avalanche.tokenList_url)).data.tokens;
-                break;
-            }
-            case 250: {
-                result.tokenList.push({
-                    chainId: chainId,
-                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                    name: 'Fantom',
-                    symbol: 'FTM',
-                    decimals: 18,
-                    logoURI: config.tokenList.fantom.logo_url
-                });
-                fetchList = (await axios.get(config.tokenList.fantom.tokenList_url)).data.tokens;
-                break;
-            }
-            case 10: {
-                result.tokenList.push({
-                    chainId: chainId,
-                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                    name: 'Optimism',
-                    symbol: 'OP',
-                    decimals: 18,
-                    logoURI: config.tokenList.optimism.logo_url
-                });
-                fetchList = (await axios.get(config.tokenList.optimism.tokenList_url)).data.tokens;
-                break;
-            }
-            case 42161: {
-                result.tokenList.push({
-                    chainId: chainId,
-                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                    name: 'Arbitrum',
-                    symbol: 'ETH',
-                    decimals: 18,
-                    logoURI: config.tokenList.arbitrum.logo_url
-                });
-                fetchList = (await axios.get(config.tokenList.arbitrum.tokenList_url)).data.tokens;
-                break;
-            }
+
+    switch (chainId) {
+        case 1: {
+            result.tokenList.push({
+                chainId: chainId,
+                address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                name: 'Ethereum',
+                symbol: 'ETH',
+                decimals: 18,
+                logoURI: config.tokenList.eth.logo_url
+            });
+            fetchList = (await axios.get(config.tokenList.eth.tokenList_url)).data.tokens;
+            break;
         }
-        result.tokenList.push(...fetchList);
-        result.tokenList.forEach((item) => {
-            if (config.tokenList.eth.recommend.includes(item.symbol)) {
-                item.isRecommended = true;
-            } else {
-                item.isRecommended = false;
-            }
-        });
-        result.total = result.tokenList.length;
-    } catch (err) {
-        res.status(500).send({ message: 'unhandled error', detail: err });
+        case 56: {
+            result.tokenList.push({
+                chainId: chainId,
+                address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                name: 'bnb',
+                symbol: 'BNB',
+                decimals: 18,
+                logoURI: config.tokenList.bsc.logo_url
+            });
+            fetchList = (await axios.get(config.tokenList.bsc.tokenList_url)).data.tokens;
+            break;
+        }
+        case 137: {
+            result.tokenList.push({
+                chainId: chainId,
+                address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                name: 'polygon',
+                symbol: 'MATIC',
+                decimals: 18,
+                logoURI: config.tokenList.polygon.logo_url
+            });
+            fetchList = (await axios.get(config.tokenList.polygon.tokenList_url)).data.tokens;
+            break;
+        }
+        case 43114: {
+            result.tokenList.push({
+                chainId: chainId,
+                address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                name: 'Avalanche',
+                symbol: 'AVAX',
+                decimals: 18,
+                logoURI: config.tokenList.avalanche.logo_url
+            });
+            fetchList = (await axios.get(config.tokenList.avalanche.tokenList_url)).data.tokens;
+            break;
+        }
+        case 250: {
+            result.tokenList.push({
+                chainId: chainId,
+                address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                name: 'Fantom',
+                symbol: 'FTM',
+                decimals: 18,
+                logoURI: config.tokenList.fantom.logo_url
+            });
+            fetchList = (await axios.get(config.tokenList.fantom.tokenList_url)).data.tokens;
+            break;
+        }
+        case 10: {
+            result.tokenList.push({
+                chainId: chainId,
+                address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                name: 'Optimism',
+                symbol: 'OP',
+                decimals: 18,
+                logoURI: config.tokenList.optimism.logo_url
+            });
+            fetchList = (await axios.get(config.tokenList.optimism.tokenList_url)).data.tokens;
+            break;
+        }
+        case 42161: {
+            result.tokenList.push({
+                chainId: chainId,
+                address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                name: 'Arbitrum',
+                symbol: 'ETH',
+                decimals: 18,
+                logoURI: config.tokenList.arbitrum.logo_url
+            });
+            fetchList = (await axios.get(config.tokenList.arbitrum.tokenList_url)).data.tokens;
+            break;
+        }
     }
+    result.tokenList.push(...fetchList);
+    result.tokenList.forEach((item) => {
+        if (config.tokenList.eth.recommend.includes(item.symbol)) {
+            item.isRecommended = true;
+        } else {
+            item.isRecommended = false;
+        }
+    });
+    result.total = result.tokenList.length;
 
     return result;
 }
