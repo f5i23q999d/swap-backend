@@ -1100,7 +1100,11 @@ app.get('/0x/sources', async (req, res) => {
         res.status(err.statusCode).send({ message: err.msg });
         return;
     }
-    const list = await axios.get(`${swapAPIEndpoints_prefix}/swap/v1/sources`);
+    const list = await axios.get(`${swapAPIEndpoints_prefix}/swap/v1/sources`, {
+        headers: {
+            '0x-api-key': config['0x_apikey']
+        }
+    });
     const result = { sources: list.data.records, total: list.data.records.length };
     res.send(result);
 });
@@ -1214,7 +1218,11 @@ app.get('/0x/quote', async (req, res) => {
                 ? 18
                 : Util.getDecimals(srcToken, signer),
             getETHPrice(1, chainId),
-            axios.get(`${swapAPIEndpoints_prefix}/swap/v1/sources`)
+            axios.get(`${swapAPIEndpoints_prefix}/swap/v1/sources`, {
+                headers: {
+                    '0x-api-key': config['0x_apikey']
+                }
+            })
         ]; // concurrent processing
         const base_queries_result = await Promise.all(base_queries);
         const inputDecimals = base_queries_result[0];
