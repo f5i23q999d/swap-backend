@@ -932,6 +932,20 @@ async function tokenList(chainId) {
             fetchList = (await axios.get(config.tokenList.eth.tokenList_url)).data.tokens;
             break;
         }
+        case 5: {
+            result.tokenList.push(
+                {
+                    chainId: chainId,
+                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                    name: 'Ethereum',
+                    symbol: 'ETH',
+                    decimals: 18,
+                    logoURI: config.tokenList.eth.logo_url
+                }
+            );
+            fetchList = (await axios.get(config.tokenList.goerli.tokenList_url)).data.tokens;
+            break;
+        }
         case 56: {
             result.tokenList.push({
                 chainId: chainId,

@@ -44,6 +44,12 @@ module.exports = {
                 'https://file.fxwallet.com/token/49b2544d7b7a10418b5851aab81e0c1bc48e4138a4f3707bb4f3ea1a8cf26ec6.svg',
             recommend: ['ETH', 'WETH', 'USDT', 'USDC', 'DAI', 'WBTC']
         },
+        goerli: {
+            tokenList_url: 'https://file.test.fxwallet.com/other/g.json',
+            logo_url:
+                'https://file.fxwallet.com/token/49b2544d7b7a10418b5851aab81e0c1bc48e4138a4f3707bb4f3ea1a8cf26ec6.svg',
+            recommend: []
+        },
         bsc: {
             tokenList_url: 'https://tokens.coingecko.com/binance-smart-chain/all.json',
             logo_url:
