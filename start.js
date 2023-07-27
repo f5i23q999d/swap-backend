@@ -615,57 +615,57 @@ async function _queryBetweenInputAndOutput(srcToken, destToken, inputAmounts, pa
     const queries = []; // 查询队列
     bitAt(flag, 0) == 1
         ? queries.push(
-              uniswapv2helper.getOutputByExactInput(
-                  srcToken,
-                  destToken,
-                  inputAmounts,
-                  ADDRESS.SushiSwapFactory,
-                  part,
-                  signer
-              )
-          )
+            uniswapv2helper.getOutputByExactInput(
+                srcToken,
+                destToken,
+                inputAmounts,
+                ADDRESS.SushiSwapFactory,
+                part,
+                signer
+            )
+        )
         : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     bitAt(flag, 1) == 1
         ? queries.push(
-              uniswapv2helper.getOutputByExactInput(
-                  srcToken,
-                  destToken,
-                  inputAmounts,
-                  ADDRESS.ShibaSwapFactory,
-                  part,
-                  signer
-              )
-          )
+            uniswapv2helper.getOutputByExactInput(
+                srcToken,
+                destToken,
+                inputAmounts,
+                ADDRESS.ShibaSwapFactory,
+                part,
+                signer
+            )
+        )
         : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     bitAt(flag, 2) == 1
         ? queries.push(
-              uniswapv2helper.getOutputByExactInput(
-                  srcToken,
-                  destToken,
-                  inputAmounts,
-                  ADDRESS.UniswapV2Factory,
-                  part,
-                  signer
-              )
-          )
+            uniswapv2helper.getOutputByExactInput(
+                srcToken,
+                destToken,
+                inputAmounts,
+                ADDRESS.UniswapV2Factory,
+                part,
+                signer
+            )
+        )
         : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     bitAt(flag, 3) == 1
         ? queries.push(
-              uniswapv3helper.getOutputByExactInput(
-                  srcToken,
-                  destToken,
-                  inputAmounts,
-                  uniswapv3_fee,
-                  ADDRESS.V3QUOTE_V2,
-                  part,
-                  signer
-              )
-          )
+            uniswapv3helper.getOutputByExactInput(
+                srcToken,
+                destToken,
+                inputAmounts,
+                uniswapv3_fee,
+                ADDRESS.V3QUOTE_V2,
+                part,
+                signer
+            )
+        )
         : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     bitAt(flag, 4) == 1
         ? queries.push(
-              aavev2helper.getOutputByExactInput(srcToken, destToken, inputAmounts, ADDRESS.AAVEPOOLV2, part, signer)
-          )
+            aavev2helper.getOutputByExactInput(srcToken, destToken, inputAmounts, ADDRESS.AAVEPOOLV2, part, signer)
+        )
         : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     bitAt(flag, 5) == 1
         ? queries.push(dodohelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, part, signer))
@@ -1222,15 +1222,15 @@ app.get('/0x/quote', async (req, res) => {
                     ? 18
                     : Util.getDecimals(srcToken, signer)
                 : destToken === ADDRESS.ETH
-                ? 18
-                : Util.getDecimals(destToken, signer),
+                    ? 18
+                    : Util.getDecimals(destToken, signer),
             side === 'SELL'
                 ? destToken === ADDRESS.ETH
                     ? 18
                     : Util.getDecimals(destToken, signer)
                 : srcToken === ADDRESS.ETH
-                ? 18
-                : Util.getDecimals(srcToken, signer),
+                    ? 18
+                    : Util.getDecimals(srcToken, signer),
             getETHPrice(1, chainId),
             axios.get(`${swapAPIEndpoints_prefix}/swap/v1/sources`, {
                 headers: {
@@ -1301,13 +1301,13 @@ app.get('/0x/quote', async (req, res) => {
         result.minimumReceived =
             side === 'SELL'
                 ? BN(data.buyAmount)
-                      .multipliedBy(1 - slippage)
-                      .dividedBy(10 ** destDecimals)
-                      .toString()
+                    .multipliedBy(1 - slippage)
+                    .dividedBy(10 ** destDecimals)
+                    .toString()
                 : BN(data.sellAmount)
-                      .multipliedBy(1 - slippage)
-                      .dividedBy(10 ** destDecimals)
-                      .toString();
+                    .multipliedBy(1 - slippage)
+                    .dividedBy(10 ** destDecimals)
+                    .toString();
         result.estimate_gas = data.estimatedGas;
         const ethPrice = base_queries_result[2];
         result.estimate_cost = BN(data.estimatedGas)
@@ -1339,18 +1339,18 @@ app.get('/0x/quote', async (req, res) => {
                 youGet:
                     side === 'SELL'
                         ? BN(other.destAmount)
-                              .dividedBy(10 ** destDecimals)
-                              .toString()
+                            .dividedBy(10 ** destDecimals)
+                            .toString()
                         : BN(other.srcAmount)
-                              .dividedBy(10 ** destDecimals)
-                              .toString(),
+                            .dividedBy(10 ** destDecimals)
+                            .toString(),
                 fees: other.data.gasUSD
             });
         }
-        const paths = [[[]]];
+        const paths = [[{ part: 100, path: [] }]];
         for (let i = 0; i < data.sources.length; i++) {
             if (Number(data.sources[i].proportion) > 0) {
-                paths[0][0].push({
+                paths[0][0].path.push({
                     name: data.sources[i].name,
                     part: Number(data.sources[i].proportion),
                     source_token: side === 'SELL' ? srcToken : destToken,
@@ -1359,14 +1359,14 @@ app.get('/0x/quote', async (req, res) => {
             }
         }
         let distribution_count = 0;
-        for (let i = 0; i < paths[0][0].length; i++) {
-            distribution_count += Number(paths[0][0][i].part);
+        for (let i = 0; i < paths[0][0].path.length; i++) {
+            distribution_count += Number(paths[0][0].path[i].part);
         }
-        for (let i = 0; i < paths[0][0].length; i++) {
-            paths[0][0][i].part = Math.round((Number(paths[0][0][i].part) / distribution_count) * 100);
+        for (let i = 0; i < paths[0][0].path.length; i++) {
+            paths[0][0].path[i].part = Math.round((Number(paths[0][0].path[i].part) / distribution_count) * 100);
         }
         for (let i = 1; i < swaps.length; i++) {
-            if (swaps[i].name === paths[0][0][0].name.replace('_', '')) {
+            if (swaps[i].name === paths[0][0].path[0].name.replace('_', '')) {
                 // data align
                 swaps[i].price = swaps[0].price;
                 swaps[i].youGet = swaps[0].youGet;

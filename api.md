@@ -221,7 +221,9 @@ protocols                   string                      指定流动性协议。
         }
     ],
     "paths": [
-        [
+      {
+        "part" :100,
+        "path": [
             [
                 {
                     "name": "Uniswap_V3",
@@ -231,6 +233,7 @@ protocols                   string                      指定流动性协议。
                 }
             ]
         ]
+      }
     ],
     "to": "0xdef1c0ded9bec7f1a1670819833240f027b25eff"
 }
