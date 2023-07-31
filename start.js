@@ -193,7 +193,7 @@ async function getChart(tokenIn, tokenOut, days, chainId) {
                 price: 1
             });
         }
-        result.diff = 0;
+        result.diff = '0';
         result.currentPrice = 1;
         return result;
     }
