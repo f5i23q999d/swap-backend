@@ -1361,7 +1361,7 @@ app.get('/0x/quote', async (req, res) => {
             distribution_count += Number(paths[0].path[0][i].part);
         }
         for (let i = 0; i < paths[0].path[0].length; i++) {
-            paths[0].path[0][i].part = Math.round((Number(paths[0].path[0][i].part) / distribution_count) * 100);
+            paths[0].path[0][i].part = (Number(paths[0].path[0][i].part) / distribution_count) * 100;
         }
         for (let i = 1; i < swaps.length; i++) {
             if (swaps[i].name === paths[0].path[0][0].name.replace('_', '')) {
