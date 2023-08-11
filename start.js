@@ -615,57 +615,57 @@ async function _queryBetweenInputAndOutput(srcToken, destToken, inputAmounts, pa
     const queries = []; // 查询队列
     bitAt(flag, 0) == 1
         ? queries.push(
-              uniswapv2helper.getOutputByExactInput(
-                  srcToken,
-                  destToken,
-                  inputAmounts,
-                  ADDRESS.SushiSwapFactory,
-                  part,
-                  signer
-              )
-          )
+            uniswapv2helper.getOutputByExactInput(
+                srcToken,
+                destToken,
+                inputAmounts,
+                ADDRESS.SushiSwapFactory,
+                part,
+                signer
+            )
+        )
         : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     bitAt(flag, 1) == 1
         ? queries.push(
-              uniswapv2helper.getOutputByExactInput(
-                  srcToken,
-                  destToken,
-                  inputAmounts,
-                  ADDRESS.ShibaSwapFactory,
-                  part,
-                  signer
-              )
-          )
+            uniswapv2helper.getOutputByExactInput(
+                srcToken,
+                destToken,
+                inputAmounts,
+                ADDRESS.ShibaSwapFactory,
+                part,
+                signer
+            )
+        )
         : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     bitAt(flag, 2) == 1
         ? queries.push(
-              uniswapv2helper.getOutputByExactInput(
-                  srcToken,
-                  destToken,
-                  inputAmounts,
-                  ADDRESS.UniswapV2Factory,
-                  part,
-                  signer
-              )
-          )
+            uniswapv2helper.getOutputByExactInput(
+                srcToken,
+                destToken,
+                inputAmounts,
+                ADDRESS.UniswapV2Factory,
+                part,
+                signer
+            )
+        )
         : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     bitAt(flag, 3) == 1
         ? queries.push(
-              uniswapv3helper.getOutputByExactInput(
-                  srcToken,
-                  destToken,
-                  inputAmounts,
-                  uniswapv3_fee,
-                  ADDRESS.V3QUOTE_V2,
-                  part,
-                  signer
-              )
-          )
+            uniswapv3helper.getOutputByExactInput(
+                srcToken,
+                destToken,
+                inputAmounts,
+                uniswapv3_fee,
+                ADDRESS.V3QUOTE_V2,
+                part,
+                signer
+            )
+        )
         : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     bitAt(flag, 4) == 1
         ? queries.push(
-              aavev2helper.getOutputByExactInput(srcToken, destToken, inputAmounts, ADDRESS.AAVEPOOLV2, part, signer)
-          )
+            aavev2helper.getOutputByExactInput(srcToken, destToken, inputAmounts, ADDRESS.AAVEPOOLV2, part, signer)
+        )
         : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     bitAt(flag, 5) == 1
         ? queries.push(dodohelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, part, signer))
@@ -1190,7 +1190,7 @@ app.get('/0x/quote', async (req, res) => {
         const destToken = req.query.target_token; // 目标token
         const inputAmounts = req.query.amount; // 源token数量
         const side = req.query.side ? String(req.query.side) : 'SELL';
-        const slippage = isNaN(Number(req.query.slippage)) ? 0.03 : Number(req.query.slippage) / 1000; // 滑点
+        const slippage = isNaN(Number(req.query.slippage)) ? 0.03 : Number(req.query.slippage) / 100; // 滑点
         const senderAddress = req.query.sender_address; // 用户地址
         const protocols = req.query.protocols;
         const chainId = isNaN(Number(req.query.chainId)) ? 1 : Number(req.query.chainId);
@@ -1220,15 +1220,15 @@ app.get('/0x/quote', async (req, res) => {
                     ? 18
                     : Util.getDecimals(srcToken, signer)
                 : destToken === ADDRESS.ETH
-                ? 18
-                : Util.getDecimals(destToken, signer),
+                    ? 18
+                    : Util.getDecimals(destToken, signer),
             side === 'SELL'
                 ? destToken === ADDRESS.ETH
                     ? 18
                     : Util.getDecimals(destToken, signer)
                 : srcToken === ADDRESS.ETH
-                ? 18
-                : Util.getDecimals(srcToken, signer),
+                    ? 18
+                    : Util.getDecimals(srcToken, signer),
             getETHPrice(1, chainId),
             axios.get(`${swapAPIEndpoints_prefix}/swap/v1/sources`, {
                 headers: {
@@ -1299,13 +1299,13 @@ app.get('/0x/quote', async (req, res) => {
         result.minimumReceived =
             side === 'SELL'
                 ? BN(data.buyAmount)
-                      .multipliedBy(1 - slippage)
-                      .dividedBy(10 ** destDecimals)
-                      .toString()
+                    .multipliedBy(1 - slippage)
+                    .dividedBy(10 ** destDecimals)
+                    .toString()
                 : BN(data.sellAmount)
-                      .multipliedBy(1 - slippage)
-                      .dividedBy(10 ** destDecimals)
-                      .toString();
+                    .multipliedBy(1 - slippage)
+                    .dividedBy(10 ** destDecimals)
+                    .toString();
         result.estimate_gas = data.estimatedGas;
         const ethPrice = base_queries_result[2];
         result.estimate_cost = BN(data.estimatedGas)
@@ -1337,11 +1337,11 @@ app.get('/0x/quote', async (req, res) => {
                 youGet:
                     side === 'SELL'
                         ? BN(other.destAmount)
-                              .dividedBy(10 ** destDecimals)
-                              .toString()
+                            .dividedBy(10 ** destDecimals)
+                            .toString()
                         : BN(other.srcAmount)
-                              .dividedBy(10 ** destDecimals)
-                              .toString(),
+                            .dividedBy(10 ** destDecimals)
+                            .toString(),
                 fees: other.data.gasUSD
             });
         }
