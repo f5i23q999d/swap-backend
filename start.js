@@ -904,6 +904,7 @@ app.get('/tokens', async (req, res) => {
         const data = cache.get(`tokens:${Number(req.query.chainId)}`);
         if (data) {
             res.send(data);
+            return;
         }
         const chainId = isNaN(Number(req.query.chainId)) ? 1 : Number(req.query.chainId);
         const result = await tokenList(chainId);
