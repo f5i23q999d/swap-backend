@@ -615,57 +615,57 @@ async function _queryBetweenInputAndOutput(srcToken, destToken, inputAmounts, pa
     const queries = []; // 查询队列
     bitAt(flag, 0) == 1
         ? queries.push(
-            uniswapv2helper.getOutputByExactInput(
-                srcToken,
-                destToken,
-                inputAmounts,
-                ADDRESS.SushiSwapFactory,
-                part,
-                signer
-            )
-        )
+              uniswapv2helper.getOutputByExactInput(
+                  srcToken,
+                  destToken,
+                  inputAmounts,
+                  ADDRESS.SushiSwapFactory,
+                  part,
+                  signer
+              )
+          )
         : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     bitAt(flag, 1) == 1
         ? queries.push(
-            uniswapv2helper.getOutputByExactInput(
-                srcToken,
-                destToken,
-                inputAmounts,
-                ADDRESS.ShibaSwapFactory,
-                part,
-                signer
-            )
-        )
+              uniswapv2helper.getOutputByExactInput(
+                  srcToken,
+                  destToken,
+                  inputAmounts,
+                  ADDRESS.ShibaSwapFactory,
+                  part,
+                  signer
+              )
+          )
         : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     bitAt(flag, 2) == 1
         ? queries.push(
-            uniswapv2helper.getOutputByExactInput(
-                srcToken,
-                destToken,
-                inputAmounts,
-                ADDRESS.UniswapV2Factory,
-                part,
-                signer
-            )
-        )
+              uniswapv2helper.getOutputByExactInput(
+                  srcToken,
+                  destToken,
+                  inputAmounts,
+                  ADDRESS.UniswapV2Factory,
+                  part,
+                  signer
+              )
+          )
         : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     bitAt(flag, 3) == 1
         ? queries.push(
-            uniswapv3helper.getOutputByExactInput(
-                srcToken,
-                destToken,
-                inputAmounts,
-                uniswapv3_fee,
-                ADDRESS.V3QUOTE_V2,
-                part,
-                signer
-            )
-        )
+              uniswapv3helper.getOutputByExactInput(
+                  srcToken,
+                  destToken,
+                  inputAmounts,
+                  uniswapv3_fee,
+                  ADDRESS.V3QUOTE_V2,
+                  part,
+                  signer
+              )
+          )
         : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     bitAt(flag, 4) == 1
         ? queries.push(
-            aavev2helper.getOutputByExactInput(srcToken, destToken, inputAmounts, ADDRESS.AAVEPOOLV2, part, signer)
-        )
+              aavev2helper.getOutputByExactInput(srcToken, destToken, inputAmounts, ADDRESS.AAVEPOOLV2, part, signer)
+          )
         : queries.push(new Array(Number(part) + 1).fill(BN(0)));
     bitAt(flag, 5) == 1
         ? queries.push(dodohelper.getOutputByExactInput(srcToken, destToken, inputAmounts, null, part, signer))
@@ -918,9 +918,10 @@ async function tokenList(chainId) {
     let result = {};
     result.tokenList = [];
     let fetchList = [];
-
+    let chainName = 'eth';
     switch (chainId) {
         case 1: {
+            chainName = 'eth';
             result.tokenList.push({
                 chainId: chainId,
                 address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
@@ -933,6 +934,7 @@ async function tokenList(chainId) {
             break;
         }
         case 5: {
+            chainName = 'goerli';
             result.tokenList.push({
                 chainId: chainId,
                 address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
@@ -945,6 +947,7 @@ async function tokenList(chainId) {
             break;
         }
         case 56: {
+            chainName = 'bsc';
             result.tokenList.push({
                 chainId: chainId,
                 address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
@@ -957,6 +960,7 @@ async function tokenList(chainId) {
             break;
         }
         case 137: {
+            chainName = 'polygon';
             result.tokenList.push({
                 chainId: chainId,
                 address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
@@ -969,6 +973,7 @@ async function tokenList(chainId) {
             break;
         }
         case 43114: {
+            chainName = 'avalanche';
             result.tokenList.push({
                 chainId: chainId,
                 address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
@@ -981,6 +986,7 @@ async function tokenList(chainId) {
             break;
         }
         case 250: {
+            chainName = 'fantom';
             result.tokenList.push({
                 chainId: chainId,
                 address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
@@ -993,6 +999,7 @@ async function tokenList(chainId) {
             break;
         }
         case 10: {
+            chainName = 'optimism';
             result.tokenList.push({
                 chainId: chainId,
                 address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
@@ -1005,6 +1012,7 @@ async function tokenList(chainId) {
             break;
         }
         case 42161: {
+            chainName = 'arbitrum';
             result.tokenList.push({
                 chainId: chainId,
                 address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
@@ -1017,12 +1025,16 @@ async function tokenList(chainId) {
             break;
         }
     }
+    fetchList = fetchList.filter((obj) => obj.chainId === chainId || !obj.hasOwnProperty('chainId'));
     result.tokenList.push(...fetchList);
     result.tokenList.forEach((item) => {
-        if (config.tokenList.eth.recommend.includes(item.symbol)) {
+        if (config.tokenList[chainName].recommend.includes(item.symbol)) {
             item.isRecommended = true;
         } else {
             item.isRecommended = false;
+        }
+        if (item.logoURI && item.logoURI.startsWith('ipfs')) {
+            item.logoURI = getIpfsPath(item.logoURI);
         }
     });
     result.total = result.tokenList.length;
@@ -1125,6 +1137,12 @@ function toHex(value) {
     return '0x' + Number(value).toString(16);
 }
 
+function getIpfsPath(originLink) {
+    const cleanUrl = originLink.replace('ipfs://', '');
+    const result = 'https://cloudflare-ipfs.com/ipfs/' + cleanUrl;
+    return result;
+}
+
 app.get('/0x/chains', async (req, res) => {
     const chains = [
         {
@@ -1220,15 +1238,15 @@ app.get('/0x/quote', async (req, res) => {
                     ? 18
                     : Util.getDecimals(srcToken, signer)
                 : destToken === ADDRESS.ETH
-                    ? 18
-                    : Util.getDecimals(destToken, signer),
+                ? 18
+                : Util.getDecimals(destToken, signer),
             side === 'SELL'
                 ? destToken === ADDRESS.ETH
                     ? 18
                     : Util.getDecimals(destToken, signer)
                 : srcToken === ADDRESS.ETH
-                    ? 18
-                    : Util.getDecimals(srcToken, signer),
+                ? 18
+                : Util.getDecimals(srcToken, signer),
             getETHPrice(1, chainId),
             axios.get(`${swapAPIEndpoints_prefix}/swap/v1/sources`, {
                 headers: {
@@ -1299,13 +1317,13 @@ app.get('/0x/quote', async (req, res) => {
         result.minimumReceived =
             side === 'SELL'
                 ? BN(data.buyAmount)
-                    .multipliedBy(1 - slippage)
-                    .dividedBy(10 ** destDecimals)
-                    .toString()
+                      .multipliedBy(1 - slippage)
+                      .dividedBy(10 ** destDecimals)
+                      .toString()
                 : BN(data.sellAmount)
-                    .multipliedBy(1 - slippage)
-                    .dividedBy(10 ** destDecimals)
-                    .toString();
+                      .multipliedBy(1 - slippage)
+                      .dividedBy(10 ** destDecimals)
+                      .toString();
         result.estimate_gas = data.estimatedGas;
         const ethPrice = base_queries_result[2];
         result.estimate_cost = BN(data.estimatedGas)
@@ -1337,11 +1355,11 @@ app.get('/0x/quote', async (req, res) => {
                 youGet:
                     side === 'SELL'
                         ? BN(other.destAmount)
-                            .dividedBy(10 ** destDecimals)
-                            .toString()
+                              .dividedBy(10 ** destDecimals)
+                              .toString()
                         : BN(other.srcAmount)
-                            .dividedBy(10 ** destDecimals)
-                            .toString(),
+                              .dividedBy(10 ** destDecimals)
+                              .toString(),
                 fees: other.data.gasUSD
             });
         }
