@@ -32,6 +32,7 @@ const dex_info = {
 };
 
 const cache = new Cache(5);
+let zeroExKeyIndex = 0;
 
 app.use(cors());
 
@@ -1126,7 +1127,7 @@ app.get('/0x/sources', async (req, res) => {
     }
     const list = await axios.get(`${swapAPIEndpoints_prefix}/swap/v1/sources`, {
         headers: {
-            '0x-api-key': config['0x_apikey']
+            '0x-api-key': get0xAPIkey()
         }
     });
     const result = { sources: list.data.records, total: list.data.records.length };
@@ -1140,6 +1141,12 @@ function toHex(value) {
 function getIpfsPath(originLink) {
     const cleanUrl = originLink.replace('ipfs://', '');
     const result = 'https://cloudflare-ipfs.com/ipfs/' + cleanUrl;
+    return result;
+}
+
+function get0xAPIkey() {
+    const result = config['0x_apikeys'][zeroExKeyIndex++];
+    zeroExKeyIndex = ++zeroExKeyIndex % config['0x_apikeys'].length;
     return result;
 }
 
@@ -1250,7 +1257,7 @@ app.get('/0x/quote', async (req, res) => {
             getETHPrice(1, chainId),
             axios.get(`${swapAPIEndpoints_prefix}/swap/v1/sources`, {
                 headers: {
-                    '0x-api-key': config['0x_apikey']
+                    '0x-api-key': get0xAPIkey()
                 }
             })
         ]; // concurrent processing
@@ -1298,7 +1305,7 @@ app.get('/0x/quote', async (req, res) => {
             axios.get(`${swapAPIEndpoints_prefix}/swap/v1/quote`, {
                 params,
                 headers: {
-                    '0x-api-key': config['0x_apikey']
+                    '0x-api-key': get0xAPIkey()
                 }
             }),
             axios.get(`https://api.paraswap.io/prices/`, {

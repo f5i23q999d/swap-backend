@@ -27,7 +27,7 @@ module.exports = {
     dodoHandler_ADDRESS: '0x4635a010Be2707a3FB9c3467Fc615202468BC51E',
     compoundHandler_ADDRESS: '',
     cryptocompare_apikey: '',
-    '0x_apikey': '',
+    '0x_apikeys': [],
     '0x_Proxy_Addresses': {
         eth: '0xdef1c0ded9bec7f1a1670819833240f027b25eff',
         polygon: '0xdef1c0ded9bec7f1a1670819833240f027b25eff',
