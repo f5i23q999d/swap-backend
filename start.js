@@ -1424,7 +1424,9 @@ app.get('/0x/quote', async (req, res) => {
                 return;
             }
         }
-        res.status(500).send({ message: 'unhandled error', detail: err });
+        //res.status(500).send({ message: 'unhandled error', detail: err });
+        console.log(err);
+        return nullResult();
     }
 });
 
