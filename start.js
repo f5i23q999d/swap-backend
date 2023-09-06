@@ -1035,6 +1035,12 @@ async function tokenList(chainId) {
         }
     }
     fetchList = fetchList.filter((obj) => obj.chainId === chainId || !obj.hasOwnProperty('chainId'));
+    fetchList = fetchList.filter(
+        (obj) =>
+            !['0x0000000000000000000000000000000000001010', '0x4200000000000000000000000000000000000042'].includes(
+                obj.address
+            )
+    );
     result.tokenList.push(...fetchList);
     result.tokenList.forEach((item) => {
         if (config.tokenList[chainName].recommend.includes(item.symbol)) {
