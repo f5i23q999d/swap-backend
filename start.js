@@ -960,7 +960,7 @@ async function tokenList(chainId) {
             result.tokenList.push({
                 chainId: chainId,
                 address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                name: 'bnb',
+                name: 'BNB',
                 symbol: 'BNB',
                 decimals: 18,
                 logoURI: config.tokenList.bsc.logo_url
@@ -1037,9 +1037,11 @@ async function tokenList(chainId) {
     fetchList = fetchList.filter((obj) => obj.chainId === chainId || !obj.hasOwnProperty('chainId'));
     fetchList = fetchList.filter(
         (obj) =>
-            !['0x0000000000000000000000000000000000001010', '0x4200000000000000000000000000000000000042'].includes(
-                obj.address
-            )
+            ![
+                '0x0000000000000000000000000000000000001010',
+                '0x4200000000000000000000000000000000000042',
+                '0x02a2b736F9150d36C0919F3aCEE8BA2A92FBBb40'
+            ].includes(obj.address)
     );
     result.tokenList.push(...fetchList);
     result.tokenList.forEach((item) => {
