@@ -1355,6 +1355,13 @@ app.get('/0x/quote', async (req, res) => {
         result.reception = BN(result.target_token_amount).dividedBy(10 ** outputDecimals);
         result.minimum_reception = result.minimumReceived.toString();
         result.price_impact = data.estimatedPriceImpact;
+        if (!result.price_impact) {
+            // 0xAPI没有price impact数据，使用paraSwap数据
+            result.price_impact =
+                ((Number(paraData.priceRoute.destUSD) - Number(paraData.priceRoute.srcUSD)) /
+                    Number(paraData.priceRoute.srcUSD)) *
+                100;
+        }
         result.tx_data = data.data;
         const swaps = [];
         swaps.push({
