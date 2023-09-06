@@ -144,9 +144,16 @@ async function getChart(tokenIn, tokenOut, days, chainId) {
         const signer = provider.getSigner(wallet.address);
         if (!symbol1) {
             symbol1 = await Util.getSymbol(tokenIn, signer);
+            if (symbol1.endsWith('.e')) {
+                // 针对axav上的token命名进行查询优化
+                symbol1 = symbol1.slice(0, -2); // 去掉最后两个字符
+            }
         }
         if (!symbol2) {
             symbol2 = await Util.getSymbol(tokenOut, signer);
+            if (symbol2.endsWith('.e')) {
+                symbol2 = symbol2.slice(0, -2); // 去掉最后两个字符
+            }
         }
         const api_key = config.cryptocompare_apikey;
         let limit;
