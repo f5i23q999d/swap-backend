@@ -117,7 +117,7 @@ async function getChart(tokenIn, tokenOut, days, chainId) {
                 break;
             case 43114:
                 provider = new ethers.providers.JsonRpcProvider(config.rpcs.avalanche);
-                chain = 'polygon';
+                chain = 'avalanche';
                 break;
             case 250:
                 provider = new ethers.providers.JsonRpcProvider(config.rpcs.fantom);
