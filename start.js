@@ -1300,6 +1300,9 @@ app.get('/0x/quote', async (req, res) => {
                 paraProtocols.push(item.replace('_', ''));
             });
             params.excludedSources = result.join(',');
+        } else {
+            res.send(nullResult()); // 没有选择协议的时候返回流动性不足
+            return;
         }
 
         let paraParams = {}; // for paraSwap api query
