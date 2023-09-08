@@ -1286,6 +1286,10 @@ app.get('/0x/quote', async (req, res) => {
         side === 'SELL' ? (params.sellAmount = inputAmounts) : (params.buyAmount = inputAmounts);
         params.slippagePercentage = slippage;
         params.affiliateAddress = wallet.address;
+        if (String(protocols) === '-1') {
+            res.send(nullResult()); // 没有选择协议的时候返回流动性不足
+            return;
+        }
         if (protocols) {
             const result = [];
             paraProtocols = [];
@@ -1300,11 +1304,7 @@ app.get('/0x/quote', async (req, res) => {
                 paraProtocols.push(item.replace('_', ''));
             });
             params.excludedSources = result.join(',');
-        } else {
-            res.send(nullResult()); // 没有选择协议的时候返回流动性不足
-            return;
         }
-
         let paraParams = {}; // for paraSwap api query
         paraParams.srcToken = srcToken;
         paraParams.destToken = destToken;
