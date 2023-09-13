@@ -739,7 +739,7 @@ async function getETHPrice(amount, chainId = 1) {
                 token = 'FTM';
                 break;
             case 10:
-                token = 'OP';
+                token = 'ETH';
                 break;
             case 42161:
                 token = 'ETH';
