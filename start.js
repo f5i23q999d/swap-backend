@@ -1349,7 +1349,7 @@ app.get('/0x/quote', async (req, res) => {
             side === 'SELL'
                 ? BN(result.target_token_amount).dividedBy(10 ** destDecimals)
                 : BN(result.source_token_amount).dividedBy(10 ** srcDecimals);
-        result.amountWithSlippage = side === 'SELL' ? result.minimumReceived : result.maximumPaid;
+        result.amount_with_slippage = side === 'SELL' ? result.minimumReceived : result.maximumPaid;
         result.price_impact = data.estimatedPriceImpact;
         if (!result.price_impact) {
             // 0xAPI没有price impact数据，使用paraSwap数据
@@ -1366,7 +1366,7 @@ app.get('/0x/quote', async (req, res) => {
                 .dividedBy(10 ** destDecimals)
                 .dividedBy(BN(result.source_token_amount).dividedBy(10 ** srcDecimals))
                 .toString(), // price无论SELL还是BUY，都是destToken / srcToken
-            userAmount: result.amount, // sell的时候是youGet, buy的时候是youPaid
+            user_amount: result.amount, // sell的时候是youGet, buy的时候是youPaid
             fees: result.estimate_cost
         });
         for (const other of paraData.priceRoute.others) {
@@ -1376,7 +1376,7 @@ app.get('/0x/quote', async (req, res) => {
                     .dividedBy(10 ** destDecimals)
                     .dividedBy(BN(other.srcAmount).dividedBy(10 ** srcDecimals))
                     .toString(),
-                userAmount:
+                user_amount:
                     side === 'SELL'
                         ? BN(other.destAmount)
                               .dividedBy(10 ** destDecimals)
@@ -1409,7 +1409,7 @@ app.get('/0x/quote', async (req, res) => {
             if (swaps[i].name === paths[0].path[0][0].name.replace('_', '')) {
                 // data align
                 swaps[i].price = swaps[0].price;
-                swaps[i].userAmount = swaps[0].youGet;
+                swaps[i].user_amount = swaps[0].youGet;
             }
         }
         result.swaps = swaps;
