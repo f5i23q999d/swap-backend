@@ -1,10 +1,10 @@
 module.exports = {
     40000: {
-        statusCode: 400,
+        statusCode: 500,
         msg: 'invalid inputAmounts'
     },
     40001: {
-        statusCode: 400,
+        statusCode: 500,
         msg: 'source_token should not same as target_token'
     },
     40002: {
@@ -12,7 +12,11 @@ module.exports = {
         msg: 'source_token should not same as target_token'
     },
     40003: {
-        statusCode: 400,
+        statusCode: 500,
         msg: 'unsupported chain'
+    },
+    40047: {
+        statusCode: 500,
+        msg: 'Service is busy. Please try again later.'
     }
 };
