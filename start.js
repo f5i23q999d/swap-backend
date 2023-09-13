@@ -1284,6 +1284,7 @@ app.get('/0x/quote', async (req, res) => {
         params.sellToken = srcToken;
         params.buyToken = destToken;
         side === 'SELL' ? (params.sellAmount = inputAmounts) : (params.buyAmount = inputAmounts);
+        params.takerAddress = senderAddress;
         params.slippagePercentage = slippage;
         params.affiliateAddress = wallet.address;
         if (String(protocols) === '-1') {
@@ -1303,6 +1304,7 @@ app.get('/0x/quote', async (req, res) => {
             words.forEach((item) => {
                 paraProtocols.push(item.replace('_', ''));
             });
+
             params.excludedSources = result.join(',');
         }
         let paraParams = {}; // for paraSwap api query
@@ -1438,6 +1440,13 @@ app.get('/0x/quote', async (req, res) => {
         }
         //res.status(500).send({ message: 'unhandled error', detail: err });
         console.log(err);
+        if (err.response.data.message.indexOf('Rate limit exceeded') !== -1) {
+            res.status(errCode['40047'].statusCode).send({
+                code: 40047,
+                message: errCode['40047'].msg
+            });
+            return;
+        }
         res.send(nullResult());
     }
 });
