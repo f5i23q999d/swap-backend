@@ -1440,11 +1440,16 @@ app.get('/0x/quote', async (req, res) => {
         }
         //res.status(500).send({ message: 'unhandled error', detail: err });
         console.log(err);
-        if (err.response.data.message.indexOf('Rate limit exceeded') !== -1) {
-            res.status(errCode['40047'].statusCode).send({
-                code: 40047,
-                message: errCode['40047'].msg
-            });
+        try {
+            if (err.response.data.message.indexOf('Rate limit exceeded') !== -1) {
+                res.status(errCode['40047'].statusCode).send({
+                    code: 40047,
+                    message: errCode['40047'].msg
+                });
+                return;
+            }
+        } catch {
+            res.send(nullResult());
             return;
         }
         res.send(nullResult());
