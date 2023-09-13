@@ -1229,7 +1229,7 @@ app.get('/0x/quote', async (req, res) => {
     try {
         const srcToken = req.query.source_token; // 源token
         const destToken = req.query.target_token; // 目标token
-        const inputAmounts = req.query.amount; // 源token数量
+        const amount = req.query.amount; // 源token数量
         const side = req.query.side ? String(req.query.side) : 'SELL';
         const slippage = isNaN(Number(req.query.slippage)) ? 0.03 : Number(req.query.slippage) / 100; // 滑点
         const senderAddress = req.query.sender_address; // 用户地址
@@ -1240,14 +1240,14 @@ app.get('/0x/quote', async (req, res) => {
         if (swapAPIEndpoints_prefix === '') {
             throw 40003;
         }
-        if (Number(inputAmounts) <= 0) {
+        if (Number(amount) <= 0) {
             throw 40000;
         }
         if (srcToken === destToken) {
             throw 40001;
         }
         const quoteCache = cache.get(
-            `quote_0x:${srcToken}:${destToken}:${inputAmounts}:${side}:${slippage}:${senderAddress}:${protocols}:${chainId}`
+            `quote_0x:${srcToken}:${destToken}:${amount}:${side}:${slippage}:${senderAddress}:${protocols}:${chainId}`
         );
         if (quoteCache) {
             res.send(quoteCache);
@@ -1256,20 +1256,8 @@ app.get('/0x/quote', async (req, res) => {
         }
         const signer = getSignerByChainId(chainId); // Obtain signer according to different chains
         const base_queries = [
-            side === 'SELL'
-                ? srcToken === ADDRESS.ETH
-                    ? 18
-                    : Util.getDecimals(srcToken, signer)
-                : destToken === ADDRESS.ETH
-                ? 18
-                : Util.getDecimals(destToken, signer),
-            side === 'SELL'
-                ? destToken === ADDRESS.ETH
-                    ? 18
-                    : Util.getDecimals(destToken, signer)
-                : srcToken === ADDRESS.ETH
-                ? 18
-                : Util.getDecimals(srcToken, signer),
+            srcToken === ADDRESS.ETH ? 18 : Util.getDecimals(srcToken, signer),
+            destToken === ADDRESS.ETH ? 18 : Util.getDecimals(destToken, signer),
             getETHPrice(1, chainId),
             axios.get(`${swapAPIEndpoints_prefix}/swap/v1/sources`, {
                 headers: {
@@ -1278,13 +1266,13 @@ app.get('/0x/quote', async (req, res) => {
             })
         ]; // concurrent processing
         const base_queries_result = await Promise.all(base_queries);
-        const inputDecimals = base_queries_result[0];
-        const outputDecimals = base_queries_result[1];
+        const srcDecimals = base_queries_result[0]; // 跟srcToken对应
+        const destDecimals = base_queries_result[1]; // 跟destToken对应
         let params = {}; // for 0x api query
         params.sellToken = srcToken;
         params.buyToken = destToken;
-        side === 'SELL' ? (params.sellAmount = inputAmounts) : (params.buyAmount = inputAmounts);
-        params.takerAddress = senderAddress;
+        side === 'SELL' ? (params.sellAmount = amount) : (params.buyAmount = amount);
+        // params.takerAddress = senderAddress; // 省略takerAddress否则不能兑换时无报价结果返回
         params.slippagePercentage = slippage;
         params.affiliateAddress = wallet.address;
         if (String(protocols) === '-1') {
@@ -1310,9 +1298,9 @@ app.get('/0x/quote', async (req, res) => {
         let paraParams = {}; // for paraSwap api query
         paraParams.srcToken = srcToken;
         paraParams.destToken = destToken;
-        paraParams.amount = inputAmounts;
-        paraParams.srcDecimals = side === 'SELL' ? inputDecimals : outputDecimals;
-        paraParams.destDecimals = 'SELL' ? outputDecimals : inputDecimals;
+        paraParams.amount = amount;
+        paraParams.srcDecimals = srcDecimals;
+        paraParams.destDecimals = destDecimals;
         paraParams.side = side;
         paraParams.otherExchangePrices = true;
         paraParams.userAddress = '0x0000000000000000000000000000000000000000';
@@ -1339,19 +1327,16 @@ app.get('/0x/quote', async (req, res) => {
         let result = {};
         result.source_token = srcToken;
         result.target_token = destToken;
-        result.source_token_amount = inputAmounts;
-        result.target_token_amount = side === 'SELL' ? data.buyAmount : data.sellAmount;
-        const destDecimals = paraParams.destDecimals;
-        result.minimumReceived =
-            side === 'SELL'
-                ? BN(data.buyAmount)
-                      .multipliedBy(1 - slippage)
-                      .dividedBy(10 ** destDecimals)
-                      .toString()
-                : BN(data.sellAmount)
-                      .multipliedBy(1 - slippage)
-                      .dividedBy(10 ** destDecimals)
-                      .toString();
+        result.source_token_amount = data.sellAmount;
+        result.target_token_amount = data.buyAmount;
+        result.maximumPaid = BN(data.sellAmount)
+            .multipliedBy(1 + slippage)
+            .dividedBy(10 ** srcDecimals)
+            .toString();
+        result.minimumReceived = BN(data.buyAmount)
+            .multipliedBy(1 - slippage)
+            .dividedBy(10 ** destDecimals)
+            .toString();
         result.estimate_gas = data.estimatedGas;
         const ethPrice = base_queries_result[2];
         result.estimate_cost = BN(data.estimatedGas)
@@ -1359,8 +1344,12 @@ app.get('/0x/quote', async (req, res) => {
             .multipliedBy(ethPrice)
             .dividedBy(10 ** 18)
             .toString();
-        result.reception = BN(result.target_token_amount).dividedBy(10 ** outputDecimals);
-        result.minimum_reception = result.minimumReceived.toString();
+        // 返回给前端显示的金额, SELL时，是buyAmount, BUY时， 是sellAmount
+        result.amount =
+            side === 'SELL'
+                ? BN(result.target_token_amount).dividedBy(10 ** destDecimals)
+                : BN(result.source_token_amount).dividedBy(10 ** srcDecimals);
+        result.amountWithSlippage = side === 'SELL' ? result.minimumReceived : result.maximumPaid;
         result.price_impact = data.estimatedPriceImpact;
         if (!result.price_impact) {
             // 0xAPI没有price impact数据，使用paraSwap数据
@@ -1374,26 +1363,26 @@ app.get('/0x/quote', async (req, res) => {
         swaps.push({
             name: 'FxSwap',
             price: BN(result.target_token_amount)
-                .dividedBy(10 ** outputDecimals)
-                .dividedBy(BN(result.source_token_amount).dividedBy(10 ** inputDecimals))
-                .toString(),
-            youGet: result.reception,
+                .dividedBy(10 ** destDecimals)
+                .dividedBy(BN(result.source_token_amount).dividedBy(10 ** srcDecimals))
+                .toString(), // price无论SELL还是BUY，都是destToken / srcToken
+            userAmount: result.amount, // sell的时候是youGet, buy的时候是youPaid
             fees: result.estimate_cost
         });
         for (const other of paraData.priceRoute.others) {
             swaps.push({
                 name: other.exchange,
-                price: BN(side === 'SELL' ? other.destAmount : other.srcAmount)
-                    .dividedBy(10 ** outputDecimals)
-                    .dividedBy(BN(side === 'SELL' ? other.srcAmount : other.destAmount).dividedBy(10 ** inputDecimals))
+                price: BN(other.destAmount)
+                    .dividedBy(10 ** destDecimals)
+                    .dividedBy(BN(other.srcAmount).dividedBy(10 ** srcDecimals))
                     .toString(),
-                youGet:
+                userAmount:
                     side === 'SELL'
                         ? BN(other.destAmount)
                               .dividedBy(10 ** destDecimals)
                               .toString()
                         : BN(other.srcAmount)
-                              .dividedBy(10 ** destDecimals)
+                              .dividedBy(10 ** srcDecimals)
                               .toString(),
                 fees: other.data.gasUSD
             });
@@ -1420,7 +1409,7 @@ app.get('/0x/quote', async (req, res) => {
             if (swaps[i].name === paths[0].path[0][0].name.replace('_', '')) {
                 // data align
                 swaps[i].price = swaps[0].price;
-                swaps[i].youGet = swaps[0].youGet;
+                swaps[i].userAmount = swaps[0].youGet;
             }
         }
         result.swaps = swaps;
@@ -1428,7 +1417,7 @@ app.get('/0x/quote', async (req, res) => {
         result.to = getProxyAddressByChainId(chainId);
         res.send(result);
         cache.set(
-            `quote_0x:${srcToken}:${destToken}:${inputAmounts}:${side}:${slippage}:${senderAddress}:${protocols}:${chainId}`,
+            `quote_0x:${srcToken}:${destToken}:${amount}:${side}:${slippage}:${senderAddress}:${protocols}:${chainId}`,
             result
         );
     } catch (err) {
