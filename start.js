@@ -1161,9 +1161,8 @@ function getIpfsPath(originLink) {
 }
 
 function get0xAPIkey() {
-    const result = config['0x_apikeys'][zeroExKeyIndex++];
-    zeroExKeyIndex = ++zeroExKeyIndex % config['0x_apikeys'].length;
-    return result;
+    return config['0x_apikeys'][++zeroExKeyIndex % config['0x_apikeys'].length];
+
 }
 
 app.get('/0x/chains', async (req, res) => {
