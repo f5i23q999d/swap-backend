@@ -1408,7 +1408,7 @@ app.get('/0x/quote', async (req, res) => {
             if (swaps[i].name === paths[0].path[0][0].name.replace('_', '')) {
                 // data align
                 swaps[i].price = swaps[0].price;
-                swaps[i].user_amount = swaps[0].youGet;
+                swaps[i].user_amount = swaps[0].user_amount;
             }
         }
         result.swaps = swaps;
