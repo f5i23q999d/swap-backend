@@ -18,5 +18,9 @@ module.exports = {
     40047: {
         statusCode: 500,
         msg: 'Service is busy. Please try again later.'
+    },
+    40048: {
+        statusCode: 500,
+        msg: 'Amount is too small.'
     }
 };
