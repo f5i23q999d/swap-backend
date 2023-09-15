@@ -202,7 +202,7 @@ async function getChart(tokenIn, tokenOut, days, chainId) {
             });
         }
         result.diff = '0';
-        result.currentPrice = 1;
+        result.currentPrice = 0;
         return result;
     }
 }
