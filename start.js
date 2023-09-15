@@ -1,4 +1,6 @@
 const express = require('express');
+const expressWinston = require('express-winston');
+const winston = require('winston');
 const { ethers } = require('ethers');
 const app = express();
 const cors = require('cors');
@@ -33,6 +35,18 @@ const dex_info = {
 
 const cache = new Cache(5);
 let zeroExKeyIndex = 0;
+
+const loggerOptions = {
+    transports: [new winston.transports.Console(), new winston.transports.File({ filename: 'test.log' })],
+    format: winston.format.combine(
+        winston.format.json(),
+        winston.format.timestamp(),
+        winston.format.printf((data) => {
+            return `${data.timestamp}  ${data.level}: ${data.message} `;
+        })
+    )
+};
+app.use(expressWinston.logger(loggerOptions));
 
 app.use(cors());
 
@@ -882,7 +896,6 @@ app.get('/quote', async (req, res) => {
 });
 
 app.get('/chart', async (req, res) => {
-    const start = new Date().getTime();
     try {
         const srcToken = req.query.source_token; // 源token
         const destToken = req.query.target_token; // 目标token
@@ -894,8 +907,6 @@ app.get('/chart', async (req, res) => {
     } catch (err) {
         res.status(500).send({ message: 'unhandled error', detail: err });
     }
-    const end = new Date().getTime();
-    console.log('图标查询总耗时: ' + (end - start) + 'ms');
 });
 
 app.get('/source', async (req, res) => {
@@ -1162,7 +1173,6 @@ function getIpfsPath(originLink) {
 
 function get0xAPIkey() {
     return config['0x_apikeys'][++zeroExKeyIndex % config['0x_apikeys'].length];
-
 }
 
 app.get('/0x/chains', async (req, res) => {
