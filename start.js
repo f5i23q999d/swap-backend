@@ -44,7 +44,10 @@ const loggerOptions = {
         winston.format.printf((data) => {
             return `${data.timestamp}  ${data.level}: ${data.message} `;
         })
-    )
+    ),
+    meta: true, // 启用 meta 选项以包含额外的元数据
+    msg: 'HTTP {{req.method}} {{req.url}} {{res.statusCode}} {{res.responseTime}}ms', // 自定义日志消息
+    responseTime: true
 };
 app.use(expressWinston.logger(loggerOptions));
 
