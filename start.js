@@ -1064,9 +1064,11 @@ async function tokenList(chainId) {
         } else {
             item.isRecommended = false;
         }
+        item.logoURI = item.logoURI.replace(`/thumb/`,`/large/`);
         if (item.logoURI && item.logoURI.startsWith('ipfs')) {
             item.logoURI = getIpfsPath(item.logoURI);
         }
+
     });
     result.total = result.tokenList.length;
 
