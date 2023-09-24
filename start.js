@@ -34,6 +34,9 @@ const dex_info = {
 };
 
 const cache = new Cache(5);
+const zeroExSourcesCache = new Cache(60 * 60 * 24);
+const tokenListCache = new Cache(60 * 60 * 24);
+
 let zeroExKeyIndex = 0;
 
 const loggerOptions = {
@@ -922,14 +925,8 @@ app.get('/source', async (req, res) => {
 
 app.get('/tokens', async (req, res) => {
     try {
-        const data = cache.get(`tokens:${Number(req.query.chainId)}`);
-        if (data) {
-            res.send(data);
-            return;
-        }
         const chainId = isNaN(Number(req.query.chainId)) ? 1 : Number(req.query.chainId);
-        const result = await tokenList(chainId);
-        cache.set(`tokens:${Number(req.query.chainId)}`, result);
+        const result = await getTokenList(chainId, config.tokenList);
         res.send(result);
     } catch (err) {
         //console.log(err);
@@ -937,142 +934,152 @@ app.get('/tokens', async (req, res) => {
     }
 });
 
-async function tokenList(chainId) {
+async function getTokenList(chainId, config, cacheName = 'tokens') {
+    const cache = tokenListCache.get(`${cacheName}:${Number(chainId)}`);
+    if (cache) {
+        return cache;
+    }
     let result = {};
     result.tokenList = [];
-    let fetchList = [];
-    let chainName = 'eth';
-    switch (chainId) {
-        case 1: {
-            chainName = 'eth';
-            result.tokenList.push({
-                chainId: chainId,
-                address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                name: 'Ethereum',
-                symbol: 'ETH',
-                decimals: 18,
-                logoURI: config.tokenList.eth.logo_url
-            });
-            fetchList = (await axios.get(config.tokenList.eth.tokenList_url)).data.tokens;
-            break;
+    try {
+        let fetchList = [];
+        let chainName = 'eth';
+        switch (chainId) {
+            case 1: {
+                chainName = 'eth';
+                result.tokenList.push({
+                    chainId: chainId,
+                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                    name: 'Ethereum',
+                    symbol: 'ETH',
+                    decimals: 18,
+                    logoURI: config.eth.logo_url
+                });
+                fetchList = (await axios.get(config.eth.tokenList_url)).data.tokens;
+                break;
+            }
+            case 5: {
+                chainName = 'goerli';
+                result.tokenList.push({
+                    chainId: chainId,
+                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                    name: 'Ethereum',
+                    symbol: 'ETH',
+                    decimals: 18,
+                    logoURI: config.eth.logo_url
+                });
+                fetchList = (await axios.get(config.goerli.tokenList_url)).data.tokens;
+                break;
+            }
+            case 56: {
+                chainName = 'bsc';
+                result.tokenList.push({
+                    chainId: chainId,
+                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                    name: 'BNB',
+                    symbol: 'BNB',
+                    decimals: 18,
+                    logoURI: config.bsc.logo_url
+                });
+                fetchList = (await axios.get(config.bsc.tokenList_url)).data.tokens;
+                break;
+            }
+            case 137: {
+                chainName = 'polygon';
+                result.tokenList.push({
+                    chainId: chainId,
+                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                    name: 'polygon',
+                    symbol: 'MATIC',
+                    decimals: 18,
+                    logoURI: config.polygon.logo_url
+                });
+                fetchList = (await axios.get(config.polygon.tokenList_url)).data.tokens;
+                break;
+            }
+            case 43114: {
+                chainName = 'avalanche';
+                result.tokenList.push({
+                    chainId: chainId,
+                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                    name: 'Avalanche',
+                    symbol: 'AVAX',
+                    decimals: 18,
+                    logoURI: config.avalanche.logo_url
+                });
+                fetchList = (await axios.get(config.avalanche.tokenList_url)).data.tokens;
+                break;
+            }
+            case 250: {
+                chainName = 'fantom';
+                result.tokenList.push({
+                    chainId: chainId,
+                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                    name: 'Fantom',
+                    symbol: 'FTM',
+                    decimals: 18,
+                    logoURI: config.fantom.logo_url
+                });
+                fetchList = (await axios.get(config.fantom.tokenList_url)).data.tokens;
+                break;
+            }
+            case 10: {
+                chainName = 'optimism';
+                result.tokenList.push({
+                    chainId: chainId,
+                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                    name: 'Optimism',
+                    symbol: 'OP',
+                    decimals: 18,
+                    logoURI: config.optimism.logo_url
+                });
+                fetchList = (await axios.get(config.optimism.tokenList_url)).data.tokens;
+                break;
+            }
+            case 42161: {
+                chainName = 'arbitrum';
+                result.tokenList.push({
+                    chainId: chainId,
+                    address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+                    name: 'Arbitrum',
+                    symbol: 'ETH',
+                    decimals: 18,
+                    logoURI: config.arbitrum.logo_url
+                });
+                fetchList = (await axios.get(config.arbitrum.tokenList_url)).data.tokens;
+                break;
+            }
         }
-        case 5: {
-            chainName = 'goerli';
-            result.tokenList.push({
-                chainId: chainId,
-                address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                name: 'Ethereum',
-                symbol: 'ETH',
-                decimals: 18,
-                logoURI: config.tokenList.eth.logo_url
-            });
-            fetchList = (await axios.get(config.tokenList.goerli.tokenList_url)).data.tokens;
-            break;
-        }
-        case 56: {
-            chainName = 'bsc';
-            result.tokenList.push({
-                chainId: chainId,
-                address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                name: 'BNB',
-                symbol: 'BNB',
-                decimals: 18,
-                logoURI: config.tokenList.bsc.logo_url
-            });
-            fetchList = (await axios.get(config.tokenList.bsc.tokenList_url)).data.tokens;
-            break;
-        }
-        case 137: {
-            chainName = 'polygon';
-            result.tokenList.push({
-                chainId: chainId,
-                address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                name: 'polygon',
-                symbol: 'MATIC',
-                decimals: 18,
-                logoURI: config.tokenList.polygon.logo_url
-            });
-            fetchList = (await axios.get(config.tokenList.polygon.tokenList_url)).data.tokens;
-            break;
-        }
-        case 43114: {
-            chainName = 'avalanche';
-            result.tokenList.push({
-                chainId: chainId,
-                address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                name: 'Avalanche',
-                symbol: 'AVAX',
-                decimals: 18,
-                logoURI: config.tokenList.avalanche.logo_url
-            });
-            fetchList = (await axios.get(config.tokenList.avalanche.tokenList_url)).data.tokens;
-            break;
-        }
-        case 250: {
-            chainName = 'fantom';
-            result.tokenList.push({
-                chainId: chainId,
-                address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                name: 'Fantom',
-                symbol: 'FTM',
-                decimals: 18,
-                logoURI: config.tokenList.fantom.logo_url
-            });
-            fetchList = (await axios.get(config.tokenList.fantom.tokenList_url)).data.tokens;
-            break;
-        }
-        case 10: {
-            chainName = 'optimism';
-            result.tokenList.push({
-                chainId: chainId,
-                address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                name: 'Optimism',
-                symbol: 'OP',
-                decimals: 18,
-                logoURI: config.tokenList.optimism.logo_url
-            });
-            fetchList = (await axios.get(config.tokenList.optimism.tokenList_url)).data.tokens;
-            break;
-        }
-        case 42161: {
-            chainName = 'arbitrum';
-            result.tokenList.push({
-                chainId: chainId,
-                address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                name: 'Arbitrum',
-                symbol: 'ETH',
-                decimals: 18,
-                logoURI: config.tokenList.arbitrum.logo_url
-            });
-            fetchList = (await axios.get(config.tokenList.arbitrum.tokenList_url)).data.tokens;
-            break;
-        }
+        fetchList = fetchList.filter((obj) => obj.chainId === chainId || !obj.hasOwnProperty('chainId'));
+        fetchList = fetchList.filter(
+            (obj) =>
+                ![
+                    '0x0000000000000000000000000000000000001010',
+                    '0x4200000000000000000000000000000000000042',
+                    '0x02a2b736F9150d36C0919F3aCEE8BA2A92FBBb40'
+                ].includes(obj.address)
+        );
+        result.tokenList.push(...fetchList);
+        result.tokenList.forEach((item) => {
+            if (config[chainName].recommend.includes(item.symbol)) {
+                item.isRecommended = true;
+            } else {
+                item.isRecommended = false;
+            }
+            if (item.logoURI) {
+                item.logoURI = item.logoURI.replace(`/thumb/`, `/large/`);
+                if (item.logoURI && item.logoURI.startsWith('ipfs')) {
+                    item.logoURI = getIpfsPath(item.logoURI);
+                }
+            }
+        });
+        result.total = result.tokenList.length;
+        tokenListCache.set(`${cacheName}:${Number(chainId)}`, result);
+        return result;
+    } catch (err) {
+        console.log(err);
+        return result;
     }
-    fetchList = fetchList.filter((obj) => obj.chainId === chainId || !obj.hasOwnProperty('chainId'));
-    fetchList = fetchList.filter(
-        (obj) =>
-            ![
-                '0x0000000000000000000000000000000000001010',
-                '0x4200000000000000000000000000000000000042',
-                '0x02a2b736F9150d36C0919F3aCEE8BA2A92FBBb40'
-            ].includes(obj.address)
-    );
-    result.tokenList.push(...fetchList);
-    result.tokenList.forEach((item) => {
-        if (config.tokenList[chainName].recommend.includes(item.symbol)) {
-            item.isRecommended = true;
-        } else {
-            item.isRecommended = false;
-        }
-        item.logoURI = item.logoURI.replace(`/thumb/`,`/large/`);
-        if (item.logoURI && item.logoURI.startsWith('ipfs')) {
-            item.logoURI = getIpfsPath(item.logoURI);
-        }
-
-    });
-    result.total = result.tokenList.length;
-
-    return result;
 }
 
 function swapAPIEndpoints_0x(chainId) {
@@ -1151,20 +1158,41 @@ function getProxyAddressByChainId(chainId) {
 
 app.get('/0x/sources', async (req, res) => {
     const chainId = isNaN(Number(req.query.chainId)) ? 1 : Number(req.query.chainId);
+
     const swapAPIEndpoints_prefix = swapAPIEndpoints_0x(chainId);
     if (swapAPIEndpoints_prefix === '') {
         const err = errCode[40003];
         res.status(err.statusCode).send({ message: err.msg });
         return;
     }
-    const list = await axios.get(`${swapAPIEndpoints_prefix}/swap/v1/sources`, {
-        headers: {
-            '0x-api-key': get0xAPIkey()
-        }
-    });
-    const result = { sources: list.data.records, total: list.data.records.length };
-    res.send(result);
+    const list = await getZeroExSources(chainId);
+    if (list) {
+        const result = { sources: list.data.records, total: list.data.records.length };
+        res.send(result);
+    } else {
+        res.send({ sources: [], total: 0 });
+    }
 });
+
+async function getZeroExSources(chainId) {
+    const cache = zeroExSourcesCache.get(`zeroExSourcesCache:${chainId}`);
+    if (cache) {
+        return cache;
+    }
+    try {
+        const swapAPIEndpoints_prefix = swapAPIEndpoints_0x(chainId);
+        const list = await axios.get(`${swapAPIEndpoints_prefix}/swap/v1/sources`, {
+            headers: {
+                '0x-api-key': get0xAPIkey()
+            }
+        });
+        zeroExSourcesCache.set(`zeroExSourcesCache:${chainId}`, list);
+        return list;
+    } catch (err) {
+        console.log(err);
+        return null;
+    }
+}
 
 function toHex(value) {
     return '0x' + Number(value).toString(16);
@@ -1269,15 +1297,19 @@ app.get('/0x/quote', async (req, res) => {
             return;
         }
         const signer = getSignerByChainId(chainId); // Obtain signer according to different chains
+        const allTokens = await getTokenList(chainId, config.allTokens, 'allTokens');
         const base_queries = [
-            srcToken === ADDRESS.ETH ? 18 : Util.getDecimals(srcToken, signer),
-            destToken === ADDRESS.ETH ? 18 : Util.getDecimals(destToken, signer),
-            getETHPrice(1, chainId),
-            axios.get(`${swapAPIEndpoints_prefix}/swap/v1/sources`, {
-                headers: {
-                    '0x-api-key': get0xAPIkey()
-                }
-            })
+            allTokens
+                ? allTokens.tokenList.find((item) => item.address === srcToken).decimals
+                : ADDRESS.ETH
+                ? 18
+                : Util.getDecimals(srcToken, signer),
+            allTokens
+                ? allTokens.tokenList.find((item) => item.address === destToken).decimals
+                : ADDRESS.ETH
+                ? 18
+                : Util.getDecimals(destToken, signer),
+            getZeroExSources(chainId)
         ]; // concurrent processing
         const base_queries_result = await Promise.all(base_queries);
         const srcDecimals = base_queries_result[0]; // 跟srcToken对应
@@ -1296,7 +1328,7 @@ app.get('/0x/quote', async (req, res) => {
         if (protocols) {
             const result = [];
             paraProtocols = [];
-            const list = base_queries_result[3].data.records;
+            const list = base_queries_result[2].data.records;
             const words = protocols.split(',');
             list.forEach((item) => {
                 if (!words.includes(item)) {
@@ -1324,6 +1356,7 @@ app.get('/0x/quote', async (req, res) => {
             paraParams.excludeDEXS = false;
             paraParams.includeDEXS = paraProtocols.join(',');
         }
+
         const core_queries = [
             axios.get(`${swapAPIEndpoints_prefix}/swap/v1/quote`, {
                 params,
@@ -1333,8 +1366,9 @@ app.get('/0x/quote', async (req, res) => {
             }),
             axios.get(`https://api.paraswap.io/prices/`, {
                 params: paraParams
-            })
-        ]; // concurrent processing
+            }),
+            getETHPrice(1, chainId)
+        ];
         const core_queries_result = await Promise.all(core_queries);
         const data = core_queries_result[0].data;
         const paraData = core_queries_result[1].data;
@@ -1352,7 +1386,7 @@ app.get('/0x/quote', async (req, res) => {
             .dividedBy(10 ** destDecimals)
             .toString();
         result.estimate_gas = data.estimatedGas;
-        const ethPrice = base_queries_result[2];
+        const ethPrice = core_queries_result[2];
         result.estimate_cost = BN(data.estimatedGas)
             .multipliedBy(data.gasPrice)
             .multipliedBy(ethPrice)
@@ -1466,8 +1500,34 @@ app.get('/0x/quote', async (req, res) => {
     }
 });
 
+async function init() {
+    await getTokenList(1, config.allTokens);
+    await getTokenList(10, config.allTokens);
+    await getTokenList(56, config.allTokens);
+    await getTokenList(137, config.allTokens);
+    await getTokenList(43114, config.allTokens);
+    await getTokenList(250, config.allTokens);
+    await getTokenList(42161, config.allTokens);
+    await getTokenList(1, config.allTokens, 'allTokens');
+    await getTokenList(10, config.allTokens, 'allTokens');
+    await getTokenList(56, config.allTokens, 'allTokens');
+    await getTokenList(137, config.allTokens, 'allTokens');
+    await getTokenList(43114, config.allTokens, 'allTokens');
+    await getTokenList(250, config.allTokens, 'allTokens');
+    await getTokenList(42161, config.allTokens, 'allTokens');
+    await getZeroExSources(1);
+    await getZeroExSources(10);
+    await getZeroExSources(56);
+    await getZeroExSources(137);
+    await getZeroExSources(250);
+    await getZeroExSources(43114);
+    await getZeroExSources(42161);
+    console.log('init cache finished');
+}
+
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`);
+    init();
 });
 
 const fs = require('fs');
