@@ -779,6 +779,40 @@ async function getETHPrice(amount, chainId = 1) {
     }
 }
 
+async function getETHPriceByDxPoolService(amount, chainId = 1) {
+    let token = 'ETH';
+    try {
+        switch (chainId) {
+            case 1:
+                token = 'ETH';
+                break;
+            case 56:
+                token = 'BNB';
+                break;
+            case 137:
+                token = 'MATIC';
+                break;
+            case 43114:
+                token = 'AVAX';
+                break;
+            case 250:
+                token = 'FTM';
+                break;
+            case 10:
+                token = 'ETH';
+                break;
+            case 42161:
+                token = 'ETH';
+                break;
+        }
+        const result = await axios.get(`https://service.price.dxpool.com:3001/price?symbols=${token}`);
+        return BN(amount).multipliedBy(Number(result.data.data.price.USD[token]));
+    } catch (err) {
+        console.log(err);
+        return BN(0);
+    }
+}
+
 function nullResult() {
     let result = {};
     result.source_token = ADDRESS.NULL;
@@ -1374,7 +1408,7 @@ app.get('/0x/quote', async (req, res) => {
                 }
             }),
             paraSwapInfoQuery,
-            getETHPrice(1, chainId)
+            getETHPriceByDxPoolService(1, chainId)
         ];
         const core_queries_result = await Promise.all(core_queries);
         const data = core_queries_result[0].data;
