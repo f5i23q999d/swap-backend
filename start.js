@@ -1298,19 +1298,23 @@ app.get('/0x/quote', async (req, res) => {
         }
         const signer = getSignerByChainId(chainId); // Obtain signer according to different chains
         const allTokens = await getTokenList(chainId, config.allTokens, 'allTokens');
-        const base_queries = [
-            allTokens
-                ? allTokens.tokenList.find((item) => item.address === srcToken).decimals
-                : ADDRESS.ETH
-                ? 18
-                : Util.getDecimals(srcToken, signer),
-            allTokens
-                ? allTokens.tokenList.find((item) => item.address === destToken).decimals
-                : ADDRESS.ETH
-                ? 18
-                : Util.getDecimals(destToken, signer),
-            getZeroExSources(chainId)
-        ]; // concurrent processing
+        let srcTokenQuery = srcToken === ADDRESS.ETH ? 18 : Util.getDecimals(srcToken, signer);
+        let destTokenQuery = destToken === ADDRESS.ETH ? 18 : Util.getDecimals(destToken, signer);
+        if (allTokens) {
+            const _srcToken = allTokens.tokenList.find(
+                (item) => item.address.toLocaleLowerCase() === srcToken.toLocaleLowerCase()
+            );
+            const _destToken = allTokens.tokenList.find(
+                (item) => item.address.toLocaleLowerCase() === destToken.toLocaleLowerCase()
+            );
+            if (_srcToken) {
+                srcTokenQuery = _srcToken.decimals;
+            }
+            if (_destToken) {
+                destTokenQuery = _destToken.decimals;
+            }
+        }
+        let base_queries = [srcTokenQuery, destTokenQuery, getZeroExSources(chainId)];
         const base_queries_result = await Promise.all(base_queries);
         const srcDecimals = base_queries_result[0]; // 跟srcToken对应
         const destDecimals = base_queries_result[1]; // 跟destToken对应
