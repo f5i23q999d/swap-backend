@@ -1277,6 +1277,7 @@ app.get('/0x/quote', async (req, res) => {
         const senderAddress = req.query.sender_address; // 用户地址
         const protocols = req.query.protocols;
         const chainId = isNaN(Number(req.query.chainId)) ? 1 : Number(req.query.chainId);
+        const showComparison = req.query.showComparison || false;
         let paraProtocols = null; // for paraswap api query
         const swapAPIEndpoints_prefix = swapAPIEndpoints_0x(chainId);
         if (swapAPIEndpoints_prefix === '') {
@@ -1360,7 +1361,11 @@ app.get('/0x/quote', async (req, res) => {
             paraParams.excludeDEXS = false;
             paraParams.includeDEXS = paraProtocols.join(',');
         }
-
+        const paraSwapInfoQuery = showComparison
+            ? axios.get(`https://api.paraswap.io/prices/`, {
+                  params: paraParams
+              })
+            : {};
         const core_queries = [
             axios.get(`${swapAPIEndpoints_prefix}/swap/v1/quote`, {
                 params,
@@ -1368,9 +1373,7 @@ app.get('/0x/quote', async (req, res) => {
                     '0x-api-key': get0xAPIkey()
                 }
             }),
-            axios.get(`https://api.paraswap.io/prices/`, {
-                params: paraParams
-            }),
+            paraSwapInfoQuery,
             getETHPrice(1, chainId)
         ];
         const core_queries_result = await Promise.all(core_queries);
@@ -1405,10 +1408,14 @@ app.get('/0x/quote', async (req, res) => {
         result.price_impact = data.estimatedPriceImpact;
         if (!result.price_impact) {
             // 0xAPI没有price impact数据，使用paraSwap数据
-            result.price_impact =
-                ((Number(paraData.priceRoute.destUSD) - Number(paraData.priceRoute.srcUSD)) /
-                    Number(paraData.priceRoute.srcUSD)) *
-                100;
+            if (showComparison) {
+                result.price_impact =
+                    ((Number(paraData.priceRoute.destUSD) - Number(paraData.priceRoute.srcUSD)) /
+                        Number(paraData.priceRoute.srcUSD)) *
+                    100;
+            } else {
+                result.price_impact = 0;
+            }
         }
         result.tx_data = data.data;
         const swaps = [];
@@ -1421,23 +1428,25 @@ app.get('/0x/quote', async (req, res) => {
             user_amount: result.amount, // sell的时候是youGet, buy的时候是youPaid
             fees: result.estimate_cost
         });
-        for (const other of paraData.priceRoute.others) {
-            swaps.push({
-                name: other.exchange,
-                price: BN(other.destAmount)
-                    .dividedBy(10 ** destDecimals)
-                    .dividedBy(BN(other.srcAmount).dividedBy(10 ** srcDecimals))
-                    .toString(),
-                user_amount:
-                    side === 'SELL'
-                        ? BN(other.destAmount)
-                              .dividedBy(10 ** destDecimals)
-                              .toString()
-                        : BN(other.srcAmount)
-                              .dividedBy(10 ** srcDecimals)
-                              .toString(),
-                fees: other.data.gasUSD
-            });
+        if (showComparison) {
+            for (const other of paraData.priceRoute.others) {
+                swaps.push({
+                    name: other.exchange,
+                    price: BN(other.destAmount)
+                        .dividedBy(10 ** destDecimals)
+                        .dividedBy(BN(other.srcAmount).dividedBy(10 ** srcDecimals))
+                        .toString(),
+                    user_amount:
+                        side === 'SELL'
+                            ? BN(other.destAmount)
+                                  .dividedBy(10 ** destDecimals)
+                                  .toString()
+                            : BN(other.srcAmount)
+                                  .dividedBy(10 ** srcDecimals)
+                                  .toString(),
+                    fees: other.data.gasUSD
+                });
+            }
         }
         const paths = [{ part: 100, path: [[]] }];
         for (let i = 0; i < data.sources.length; i++) {
