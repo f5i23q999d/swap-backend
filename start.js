@@ -1501,13 +1501,13 @@ app.get('/0x/quote', async (req, res) => {
 });
 
 async function init() {
-    await getTokenList(1, config.allTokens);
-    await getTokenList(10, config.allTokens);
-    await getTokenList(56, config.allTokens);
-    await getTokenList(137, config.allTokens);
-    await getTokenList(43114, config.allTokens);
-    await getTokenList(250, config.allTokens);
-    await getTokenList(42161, config.allTokens);
+    await getTokenList(1, config.tokenList);
+    await getTokenList(10, config.tokenList);
+    await getTokenList(56, config.tokenList);
+    await getTokenList(137, config.tokenList);
+    await getTokenList(43114, config.tokenList);
+    await getTokenList(250, config.tokenList);
+    await getTokenList(42161, config.tokenList);
     await getTokenList(1, config.allTokens, 'allTokens');
     await getTokenList(10, config.allTokens, 'allTokens');
     await getTokenList(56, config.allTokens, 'allTokens');
