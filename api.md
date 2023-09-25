@@ -271,3 +271,22 @@ GET
 
 [输出样例]
 {"chains":[{"name":"Ethereum","rpc":"https://rpc.ankr.com/eth","token":"ETH","logo_url":"https://file.fxwallet.com/token/49b2544d7b7a10418b5851aab81e0c1bc48e4138a4f3707bb4f3ea1a8cf26ec6.svg","chainId":"0x1"},{"name":"BNB Chain","rpc":"https://rpc.ankr.com/bsc","token":"BNB","logo_url":"https://file.fxwallet.com/token/62ad22a04becfde983e3c940113d356e84691c80a882d304840c8162cc8fc394.svg","chainId":"0x38"},{"name":"Polygon","rpc":"https://rpc.ankr.com/polygon","token":"MATIC","logo_url":"https://file.fxwallet.com/token/34ee6b70c50f3f2556796b3c79d3f76cc05c89ecec1bb5b12a6d6cbfae23e058.png","chainId":"0x89"},{"name":"Optimism","rpc":"https://rpc.ankr.com/optimism","token":"OP","logo_url":"https://file.fxwallet.com/token/2a53bc62dff62b5ee60e2297032990fc9bddf3b80c30e0a3ea8945d447a71cba.svg","chainId":"0xa"},{"name":"Arbitrum","rpc":"https://rpc.ankr.com/arbitrum","token":"ARB","logo_url":"https://file.fxwallet.com/token/cea438da55ced2ac65bea8d4aab84a3b53d723da7c0feed25446f9879ce1433e.svg","chainId":"0xa4b1"},{"name":"Avalanche","rpc":"https://rpc.ankr.com/avalanche","token":"AVAX","logo_url":"https://file.fxwallet.com/1679972090672-avax.png","chainId":"0xa86a"},{"name":"Fantom","rpc":"https://rpc.ankr.com/fantom","token":"FTM","logo_url":"https://file.fxwallet.com/default/1683530682226-ftm.png","chainId":"0xfa"}],"total":7}
+
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+[路径]
+/gas
+
+[描述]
+返回不同链的gas价格
+
+[method]
+GET
+
+[输入参数]
+参数名称                     类型               必填       描述                   
+chainId                     number                      默认1，代表以太链
+
+[输出样例]
+{"status":"success","code":20000,"LastBlock":18210232,"safe":{"gas":7.14810839,"time":17},"propose":{"gas":7.16810839,"time":13},"fast":{"gas":7.17810839,"time":12},"suggestBaseFee":"7.078108386","gasUsedRatio":""}

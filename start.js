@@ -1547,6 +1547,36 @@ app.get('/0x/quote', async (req, res) => {
     }
 });
 
+app.get('/gas', async (req, res) => {
+    let chainId = Number(req.query.chainId);
+    let queryName = 'eth';
+    switch (chainId) {
+        case 1:
+            token = 'eth';
+            break;
+        case 56:
+            token = 'bnb';
+            break;
+        case 137:
+            token = 'polygon';
+            break;
+        case 43114:
+            token = 'avax';
+            break;
+        case 250:
+            token = 'ftm';
+            break;
+        case 10:
+            token = 'optimism';
+            break;
+        case 42161:
+            token = 'arbitrum';
+            break;
+    }
+    const result = (await axios.get(`https://api.fxwallet.com/chain/${queryName}/gas`)).data;
+    res.send(result);
+});
+
 async function init() {
     await getTokenList(1, config.tokenList);
     await getTokenList(10, config.tokenList);
