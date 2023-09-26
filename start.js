@@ -790,7 +790,7 @@ async function getETHPriceByDxPoolService(amount, chainId = 1) {
                 token = 'BNB';
                 break;
             case 137:
-                token = 'MATIC';
+                token = 'matic';
                 break;
             case 43114:
                 token = 'AVAX';
