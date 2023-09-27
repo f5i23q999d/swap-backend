@@ -1419,9 +1419,10 @@ app.get('/0x/quote', async (req, res) => {
         result.source_token_amount = data.sellAmount;
         result.target_token_amount = data.buyAmount;
         result.maximumPaid = BN(data.sellAmount)
+            .multipliedBy(1 + 0.0016)
             .multipliedBy(1 + slippage)
             .dividedBy(10 ** srcDecimals)
-            .toString();
+            .toString();  // 除了滑点，需要再算上0x协议的手续费
         result.minimumReceived = BN(data.buyAmount)
             .multipliedBy(1 - slippage)
             .dividedBy(10 ** destDecimals)
