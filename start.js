@@ -1107,6 +1107,13 @@ async function getTokenList(chainId, config, cacheName = 'tokens') {
                 }
             }
         });
+
+        const index = result.tokenList.findIndex((item) => item.symbol === 'DAI');
+        if (index > 1) {
+            const element = result.tokenList.splice(index, 1)[0];
+            result.tokenList.splice(1, 0, element);
+        } // 第二位置默认为DAI
+
         result.total = result.tokenList.length;
         tokenListCache.set(`${cacheName}:${Number(chainId)}`, result);
         return result;
@@ -1422,7 +1429,7 @@ app.get('/0x/quote', async (req, res) => {
             .multipliedBy(1 + 0.0016)
             .multipliedBy(1 + slippage)
             .dividedBy(10 ** srcDecimals)
-            .toString();  // 除了滑点，需要再算上0x协议的手续费
+            .toString(); // 除了滑点，需要再算上0x协议的手续费
         result.minimumReceived = BN(data.buyAmount)
             .multipliedBy(1 - slippage)
             .dividedBy(10 ** destDecimals)
