@@ -1023,7 +1023,7 @@ async function getTokenList(chainId, config, cacheName = 'tokens') {
                 result.tokenList.push({
                     chainId: chainId,
                     address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                    name: 'polygon',
+                    name: 'Polygon',
                     symbol: 'MATIC',
                     decimals: 18,
                     logoURI: config.polygon.logo_url
@@ -1062,8 +1062,8 @@ async function getTokenList(chainId, config, cacheName = 'tokens') {
                 result.tokenList.push({
                     chainId: chainId,
                     address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                    name: 'Optimism',
-                    symbol: 'OP',
+                    name: 'Optimism_ETH',
+                    symbol: 'ETH',
                     decimals: 18,
                     logoURI: config.optimism.logo_url
                 });
@@ -1075,7 +1075,7 @@ async function getTokenList(chainId, config, cacheName = 'tokens') {
                 result.tokenList.push({
                     chainId: chainId,
                     address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-                    name: 'Arbitrum',
+                    name: 'Arbitrum_ETH',
                     symbol: 'ETH',
                     decimals: 18,
                     logoURI: config.arbitrum.logo_url
