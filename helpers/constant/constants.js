@@ -5,7 +5,7 @@ module.exports = {
         bsc: 'BNB',
         fantom: 'FTM',
         avalanche: 'AVAX',
-        optimism: 'OP',
+        optimism: 'ETH',
         arbitrum: 'ETH'
     }
 };
