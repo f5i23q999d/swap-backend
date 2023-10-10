@@ -989,7 +989,9 @@ async function getTokenList(chainId, config, cacheName = 'tokens') {
                     decimals: 18,
                     logoURI: config.eth.logo_url
                 });
-                fetchList = (await axios.get(config.eth.tokenList_url)).data.tokens;
+                for (const tokenList_url of config.eth.tokenList_urls) {
+                    fetchList = fetchList.concat((await axios.get(tokenList_url)).data.tokens);
+                }
                 break;
             }
             case 5: {
@@ -1002,7 +1004,9 @@ async function getTokenList(chainId, config, cacheName = 'tokens') {
                     decimals: 18,
                     logoURI: config.eth.logo_url
                 });
-                fetchList = (await axios.get(config.goerli.tokenList_url)).data.tokens;
+                for (const tokenList_url of config.goerli.tokenList_urls) {
+                    fetchList = fetchList.concat((await axios.get(tokenList_url)).data.tokens);
+                }
                 break;
             }
             case 56: {
@@ -1015,7 +1019,9 @@ async function getTokenList(chainId, config, cacheName = 'tokens') {
                     decimals: 18,
                     logoURI: config.bsc.logo_url
                 });
-                fetchList = (await axios.get(config.bsc.tokenList_url)).data.tokens;
+                for (const tokenList_url of config.bsc.tokenList_urls) {
+                    fetchList = fetchList.concat((await axios.get(tokenList_url)).data.tokens);
+                }
                 break;
             }
             case 137: {
@@ -1028,7 +1034,9 @@ async function getTokenList(chainId, config, cacheName = 'tokens') {
                     decimals: 18,
                     logoURI: config.polygon.logo_url
                 });
-                fetchList = (await axios.get(config.polygon.tokenList_url)).data.tokens;
+                for (const tokenList_url of config.polygon.tokenList_urls) {
+                    fetchList = fetchList.concat((await axios.get(tokenList_url)).data.tokens);
+                }
                 break;
             }
             case 43114: {
@@ -1041,7 +1049,9 @@ async function getTokenList(chainId, config, cacheName = 'tokens') {
                     decimals: 18,
                     logoURI: config.avalanche.logo_url
                 });
-                fetchList = (await axios.get(config.avalanche.tokenList_url)).data.tokens;
+                for (const tokenList_url of config.avalanche.tokenList_urls) {
+                    fetchList = fetchList.concat((await axios.get(tokenList_url)).data.tokens);
+                }
                 break;
             }
             case 250: {
@@ -1054,7 +1064,9 @@ async function getTokenList(chainId, config, cacheName = 'tokens') {
                     decimals: 18,
                     logoURI: config.fantom.logo_url
                 });
-                fetchList = (await axios.get(config.fantom.tokenList_url)).data.tokens;
+                for (const tokenList_url of config.fantom.tokenList_urls) {
+                    fetchList = fetchList.concat((await axios.get(tokenList_url)).data.tokens);
+                }
                 break;
             }
             case 10: {
@@ -1067,7 +1079,9 @@ async function getTokenList(chainId, config, cacheName = 'tokens') {
                     decimals: 18,
                     logoURI: config.optimism.logo_url
                 });
-                fetchList = (await axios.get(config.optimism.tokenList_url)).data.tokens;
+                for (const tokenList_url of config.optimism.tokenList_urls) {
+                    fetchList = fetchList.concat((await axios.get(tokenList_url)).data.tokens);
+                }
                 break;
             }
             case 42161: {
@@ -1080,11 +1094,16 @@ async function getTokenList(chainId, config, cacheName = 'tokens') {
                     decimals: 18,
                     logoURI: config.arbitrum.logo_url
                 });
-                fetchList = (await axios.get(config.arbitrum.tokenList_url)).data.tokens;
+                for (const tokenList_url of config.arbitrum.tokenList_urls) {
+                    fetchList = fetchList.concat((await axios.get(tokenList_url)).data.tokens);
+                }
                 break;
             }
         }
         fetchList = fetchList.filter((obj) => obj.chainId === chainId || !obj.hasOwnProperty('chainId'));
+        // 去重
+        let list = [];
+        fetchList = fetchList.filter((item) => !list.includes(item.address) && list.push(item.address));        
         fetchList = fetchList.filter(
             (obj) =>
                 ![
