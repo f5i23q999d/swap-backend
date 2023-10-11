@@ -1447,11 +1447,13 @@ app.get('/0x/quote', async (req, res) => {
         result.maximumPaid = BN(data.sellAmount)
             .multipliedBy(1 + 0.0016)
             .multipliedBy(1 + slippage)
-            .dividedBy(10 ** srcDecimals)
+            .dividedBy(10 ** srcDecimals)            
+            .toFixed(srcDecimals)
             .toString(); // 除了滑点，需要再算上0x协议的手续费
         result.minimumReceived = BN(data.buyAmount)
             .multipliedBy(1 - slippage)
             .dividedBy(10 ** destDecimals)
+            .toFixed(destDecimals)
             .toString();
         result.estimate_gas = data.estimatedGas;
         const ethPrice = core_queries_result[2];
