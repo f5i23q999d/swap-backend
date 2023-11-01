@@ -1347,6 +1347,29 @@ app.get('/0x/quote', async (req, res) => {
     }
 });
 
+app.get('/union/quote', async (req, res) => {
+    try {
+        const dex = req.protocols;
+        req.protocols = '';
+        let result = await zeroEx.getQuote(req);
+        switch(dex){
+            case '0x': result = await zeroEx.getQuote(req); break;
+            default: result = await zeroEx.getQuote(req); break;
+        }
+        if (result.code) {
+            res.status(errCode[result.code].statusCode).send({
+                code: result.code,
+                message: errCode[result.code].msg
+            });
+            return;
+        }
+        res.send(result);
+        return;
+    } catch (err) {
+        console.log(err);
+    }
+});
+
 app.get('/gas', async (req, res) => {
     let chainId = Number(req.query.chainId);
     let queryName = 'eth';
