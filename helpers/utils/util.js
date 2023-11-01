@@ -22,6 +22,12 @@ class Util {
         return new BigNumber(value);
     }
 
+    static getIpfsPath(originLink) {
+        const cleanUrl = originLink.replace('ipfs://', '');
+        const result = 'https://cloudflare-ipfs.com/ipfs/' + cleanUrl;
+        return result;
+    }
+
 }
 
 module.exports = Util;
