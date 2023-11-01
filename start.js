@@ -1352,7 +1352,7 @@ app.get('/union/quote', async (req, res) => {
         const dex = req.protocols;
         req.protocols = '';
         let result = await zeroEx.getQuote(req);
-        switch(dex){
+        switch (dex) {
             case '0x': result = await zeroEx.getQuote(req); break;
             default: result = await zeroEx.getQuote(req); break;
         }
@@ -1368,6 +1368,12 @@ app.get('/union/quote', async (req, res) => {
     } catch (err) {
         console.log(err);
     }
+});
+
+
+app.get('/union/sources', async (req, res) => {
+    const result = { sources: ['0x'], total: 1 };
+    res.send(result);
 });
 
 app.get('/gas', async (req, res) => {
