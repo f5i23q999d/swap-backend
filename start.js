@@ -169,10 +169,10 @@ async function getChart(tokenIn, tokenOut, days, chainId) {
     if (allTokens) {
       symbol1 = allTokens.tokenList.find(
         (item) => item.address.toLocaleLowerCase() === tokenIn.toLocaleLowerCase()
-      ).symbol;
+      )?.symbol;
       symbol2 = allTokens.tokenList.find(
         (item) => item.address.toLocaleLowerCase() === tokenOut.toLocaleLowerCase()
-      ).symbol;
+      )?.symbol;
     }
     if (!symbol1) {
       symbol1 = await Util.getSymbol(tokenIn, signer);
