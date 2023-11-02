@@ -165,6 +165,15 @@ async function getChart(tokenIn, tokenOut, days, chainId) {
     }
     const wallet = new ethers.Wallet(config.privateKey, provider);
     const signer = provider.getSigner(wallet.address);
+    const allTokens = await getTokenList(chainId, config.allTokens, 'allTokens');
+    if (allTokens) {
+      symbol1 = allTokens.tokenList.find(
+        (item) => item.address.toLocaleLowerCase() === tokenIn.toLocaleLowerCase()
+      ).symbol;
+      symbol2 = allTokens.tokenList.find(
+        (item) => item.address.toLocaleLowerCase() === tokenOut.toLocaleLowerCase()
+      ).symbol;
+    }
     if (!symbol1) {
       symbol1 = await Util.getSymbol(tokenIn, signer);
       if (symbol1.endsWith('.e')) {
