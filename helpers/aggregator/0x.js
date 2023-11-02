@@ -46,10 +46,11 @@ class zeroEx {
       if (quoteCache) {
         return quoteCache;
       }
+      let srcTokenQuery = null;
+      let destTokenQuery = null;
       const signer = this.getSignerByChainId(chainId); // Obtain signer according to different chains
       const allTokens = await this.aggregatorCommon.getTokenList(chainId, config.allTokens, 'allTokens');
-      let srcTokenQuery = srcToken === ADDRESS.ETH ? 18 : Util.getDecimals(srcToken, signer);
-      let destTokenQuery = destToken === ADDRESS.ETH ? 18 : Util.getDecimals(destToken, signer);
+
       if (allTokens) {
         const _srcToken = allTokens.tokenList.find(
           (item) => item.address.toLocaleLowerCase() === srcToken.toLocaleLowerCase()
@@ -64,6 +65,13 @@ class zeroEx {
           destTokenQuery = _destToken.decimals;
         }
       }
+      if (!srcTokenQuery) {
+        srcTokenQuery = srcToken === ADDRESS.ETH ? 18 : Util.getDecimals(srcToken, signer);
+      }
+      if (!destTokenQuery) {
+        destTokenQuery = destToken === ADDRESS.ETH ? 18 : Util.getDecimals(destToken, signer);
+      }
+
       let base_queries = [srcTokenQuery, destTokenQuery, this.getZeroExSources(chainId)];
       const base_queries_result = await Promise.all(base_queries);
       const srcDecimals = base_queries_result[0]; // 跟srcToken对应
