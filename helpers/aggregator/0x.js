@@ -158,6 +158,7 @@ class zeroEx {
         .multipliedBy(data.gasPrice)
         .multipliedBy(ethPrice)
         .dividedBy(10 ** 18)
+        .toFixed(18)
         .toString();
       // 返回给前端显示的金额, SELL时，是buyAmount, BUY时， 是sellAmount
       result.amount =
@@ -184,6 +185,7 @@ class zeroEx {
         price: BN(result.target_token_amount)
           .dividedBy(10 ** destDecimals)
           .dividedBy(BN(result.source_token_amount).dividedBy(10 ** srcDecimals))
+          .toFixed(18)
           .toString(), // price无论SELL还是BUY，都是destToken / srcToken
         user_amount: result.amount, // sell的时候是youGet, buy的时候是youPaid
         fees: result.estimate_cost
