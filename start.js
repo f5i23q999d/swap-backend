@@ -41,6 +41,8 @@ let zeroExKeyIndex = 0;
 
 const ZeroEx = require('./helpers/aggregator/0x');
 const zeroEx = new ZeroEx();
+const OneInch = require('./helpers/aggregator/1inch');
+const oneInch = new OneInch();
 
 const loggerOptions = {
   transports: [new winston.transports.Console(), new winston.transports.File({ filename: 'test.log' })],
@@ -1310,12 +1312,14 @@ app.get('/0x/quote', async (req, res) => {
 
 app.get('/union/quote', async (req, res) => {
   try {
-    const dex = req.protocols;
+    const dex = req.query.protocols;
     req.protocols = '';
-    let result = await zeroEx.getQuote(req);
     switch (dex) {
       case '0x':
         result = await zeroEx.getQuote(req);
+        break;
+      case '1inch':
+        result = await oneInch.getQuote(req);
         break;
       default:
         result = await zeroEx.getQuote(req);
