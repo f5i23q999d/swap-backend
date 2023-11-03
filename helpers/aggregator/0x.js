@@ -131,7 +131,7 @@ class zeroEx {
           }
         }),
         paraSwapInfoQuery,
-        this.aggregatorCommon.getETHPriceByDxPoolService(1, chainId)
+        this.aggregatorCommon.getPriceByDxPoolService(1, chainId)
       ];
       const core_queries_result = await Promise.all(core_queries);
       const data = core_queries_result[0].data;

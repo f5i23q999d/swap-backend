@@ -140,5 +140,6 @@ module.exports = {
       logo_url: 'https://file.fxwallet.com/token/cea438da55ced2ac65bea8d4aab84a3b53d723da7c0feed25446f9879ce1433e.svg',
       recommend: ['WETH', 'USDT', 'USDC', 'DAI', 'WBTC']
     }
-  }
+  },
+  '1inch_apikeys': []
 };
