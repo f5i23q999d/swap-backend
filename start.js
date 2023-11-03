@@ -1313,7 +1313,7 @@ app.get('/0x/quote', async (req, res) => {
 app.get('/union/quote', async (req, res) => {
   try {
     const dex = req.query.protocols;
-    req.protocols = '';
+    req.query.protocols = '';
     switch (dex) {
       case '0x':
         result = await zeroEx.getQuote(req);
