@@ -212,6 +212,10 @@ async function getChart(tokenIn, tokenOut, days, chainId) {
     const response = await axios.get(url);
     const data = response.data.Data.Data;
 
+    if(!data){
+      throw `CCCAGG market does not exist for this coin pair (${symbol1}-${symbol2})`
+    }
+    
     let result = {};
     result.chart = [];
     for (let i = 0; i < data.length; i++) {
