@@ -155,7 +155,7 @@ class OneInch {
 
       result.swaps = swaps;
       result.paths = paths;
-      result.to = core_queries_result[2].data.to;
+      result.to = data.tx.to;
 
       this.cache.set(
         `quote_0x:${srcToken}:${destToken}:${amount}:${side}:${slippage}:${senderAddress}:${chainId}`,
