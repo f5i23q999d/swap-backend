@@ -325,10 +325,6 @@ protocols                   string                      指定聚合swap协议�
 [method]
 GET
 
-[输入参数]
-参数名称                     类型               必填       描述                   
-chainId                     number                      默认1，代表以太链
-
 [输出样例]
 {"sources":["0x"],"total":1}
 
