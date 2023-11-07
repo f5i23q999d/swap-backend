@@ -38,6 +38,7 @@ const zeroExSourcesCache = new Cache(60 * 60 * 24);
 const tokenListCache = new Cache(60 * 60 * 24);
 
 let zeroExKeyIndex = 0;
+let coinGeckoIndex = 0;
 
 const ZeroEx = require('./helpers/aggregator/0x');
 const zeroEx = new ZeroEx();
@@ -212,10 +213,10 @@ async function getChart(tokenIn, tokenOut, days, chainId) {
     const response = await axios.get(url);
     const data = response.data.Data.Data;
 
-    if(!data){
-      throw `CCCAGG market does not exist for this coin pair (${symbol1}-${symbol2})`
+    if (!data) {
+      throw `CCCAGG market does not exist for this coin pair (${symbol1}-${symbol2})`;
     }
-    
+
     let result = {};
     result.chart = [];
     for (let i = 0; i < data.length; i++) {
@@ -919,6 +920,113 @@ app.get('/chart', async (req, res) => {
   }
 });
 
+app.get('/price', async (req, res) => {
+  try {
+    const srcToken = req.query.source_token; // 源token
+    const destToken = req.query.target_token; // 目标token
+    const chainId = Number(req.query.chainId);
+    let asset_platforms_id = 'ethereum';
+    switch (chainId) {
+      case 1:
+        asset_platforms_id = 'ethereum';
+        break;
+      case 10:
+        asset_platforms_id = 'optimistic-ethereum';
+        break;
+      case 56:
+        asset_platforms_id = 'binance-smart-chain';
+        break;
+      case 137:
+        asset_platforms_id = 'polygon-pos';
+        break;
+      case 250:
+        asset_platforms_id = 'fantom';
+        break;
+      case 42161:
+        asset_platforms_id = 'arbitrum-one';
+        break;
+      case 43114:
+        asset_platforms_id = 'avalanche';
+        break;
+    }
+    const coingecko_result = await getETHPriceByCoingecko(asset_platforms_id, srcToken, destToken);
+    const srcToken_24h_before_price =
+      coingecko_result.from_token_price.usd * (1 - coingecko_result.from_token_price.usd_24h_change / 100);
+    const destToken_24h_before_price =
+      coingecko_result.to_token_price.usd * (1 - coingecko_result.to_token_price.usd_24h_change / 100);
+    const srcToken_current_price = coingecko_result.from_token_price.usd;
+    const destToken_current_price = coingecko_result.to_token_price.usd;
+    if (destToken_current_price === 0) {
+      throw 'invalid price';
+    }
+    const result = {};
+    result.currentPrice = srcToken_current_price / destToken_current_price;
+    const before_24h_Price = srcToken_24h_before_price / destToken_24h_before_price;
+    result.diff = (((result.currentPrice - before_24h_Price) * 100) / before_24h_Price).toFixed(2);
+    res.send(result);
+  } catch (err) {
+    res.send({ currentPrice: 0, diff: '0' });
+  }
+});
+
+async function getETHPriceByCoingecko(id, from_token, to_token) {
+  const coingecko_url = 'https://api.coingecko.com';
+  try {
+    const query = [];
+    let from_token_result = {};
+    if (from_token.toLocaleLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
+      query.push(
+        axios.get(
+          `${coingecko_url}/api/v3/simple/price?ids=${id}&x_cg_demo_api_key=${getCoingeckoAPIkey()}&include_24hr_change=true&vs_currencies=usd`
+        )
+      );
+    } else {
+      query.push(
+        axios.get(
+          `${coingecko_url}/api/v3/simple/token_price/${id}?contract_addresses=${from_token}&x_cg_demo_api_key=${getCoingeckoAPIkey()}&include_24hr_change=true&vs_currencies=usd`
+        )
+      );
+    }
+
+    if (to_token.toLocaleLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
+      query.push(
+        axios.get(
+          `${coingecko_url}/api/v3/simple/price?ids=${id}&x_cg_demo_api_key=${getCoingeckoAPIkey()}&include_24hr_change=true&vs_currencies=usd`
+        )
+      );
+    } else {
+      query.push(
+        axios.get(
+          `${coingecko_url}/api/v3/simple/token_price/${id}?contract_addresses=${to_token}&x_cg_demo_api_key=${getCoingeckoAPIkey()}&include_24hr_change=true&vs_currencies=usd`
+        )
+      );
+    }
+
+    const query_result = await Promise.all(query);
+    const from_token_price = extractCoingeckoValue(query_result[0].data);
+    const to_token_price = extractCoingeckoValue(query_result[1].data);
+    return { from_token_price, to_token_price };
+  } catch (err) {
+    console.log(err);
+    return { from_token_price: { usd: 0, usd_24h_change: 0 }, to_token_price: { usd: 0, usd_24h_change: 0 } };
+  }
+}
+
+function extractCoingeckoValue(obj) {
+  // 遍历对象的属性
+  for (let key in obj) {
+    // 检查属性是否存在
+    if (obj.hasOwnProperty(key)) {
+      // 检查属性的值是否是一个对象
+      if (typeof obj[key] === 'object') {
+        // 检查对象是否包含 usd 属性
+        return { usd: obj[key].usd, usd_24h_change: obj[key].usd_24h_change };
+      }
+    }
+  }
+  return { usd: 0, usd_24h_change: 0 };
+}
+
 app.get('/source', async (req, res) => {
   const chainId = isNaN(Number(req.query.chainId)) ? Number(req.query.chainId) : 1;
   if (chainId === 1) {
@@ -1236,6 +1344,10 @@ function getIpfsPath(originLink) {
 
 function get0xAPIkey() {
   return config['0x_apikeys'][++zeroExKeyIndex % config['0x_apikeys'].length];
+}
+
+function getCoingeckoAPIkey() {
+  return config['coingecko_apikeys'][++coinGeckoIndex % config['coingecko_apikeys'].length];
 }
 
 app.get('/0x/chains', async (req, res) => {
