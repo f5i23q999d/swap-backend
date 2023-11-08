@@ -75,7 +75,7 @@ class AggregatorCommon {
         }
       }
       const result = await axios.get(`https://service.price.dxpool.com:3001/price?symbols=${token}`);
-      return BN(amount).multipliedBy(Number(result.data.data.price.USD[token]));
+      return BN(amount).multipliedBy(Number(result.data.data.price.USD[token] || result.data.data.price.USD[token.toLocaleLowerCase()]));  // 有可能出现小写的情况
     } catch (err) {
       console.log(err);
       return BN(0);
