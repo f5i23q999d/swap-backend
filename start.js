@@ -971,13 +971,31 @@ app.get('/price', async (req, res) => {
 
 async function getETHPriceByCoingecko(id, from_token, to_token) {
   const coingecko_url = 'https://api.coingecko.com';
+  let coin_id = '';
+  switch (id) {
+    case 'binance-smart-chain':
+      coin_id = 'binancecoin';
+      break;
+    case 'avalanche':
+      coin_id = 'avalanche-2';
+      break;
+    case 'optimistic-ethereum':
+      coin_id = 'ethereum';
+      break;
+    case 'arbitrum-one':
+      coin_id = 'ethereum';
+      break;
+    case 'polygon-pos':
+      coin_id = 'matic-network';
+      break;
+  }
   try {
     const query = [];
     let from_token_result = {};
     if (from_token.toLocaleLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
       query.push(
         axios.get(
-          `${coingecko_url}/api/v3/simple/price?ids=${id}&x_cg_demo_api_key=${getCoingeckoAPIkey()}&include_24hr_change=true&vs_currencies=usd`
+          `${coingecko_url}/api/v3/simple/price?ids=${coin_id}&x_cg_demo_api_key=${getCoingeckoAPIkey()}&include_24hr_change=true&vs_currencies=usd`
         )
       );
     } else {
@@ -991,7 +1009,7 @@ async function getETHPriceByCoingecko(id, from_token, to_token) {
     if (to_token.toLocaleLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
       query.push(
         axios.get(
-          `${coingecko_url}/api/v3/simple/price?ids=${id}&x_cg_demo_api_key=${getCoingeckoAPIkey()}&include_24hr_change=true&vs_currencies=usd`
+          `${coingecko_url}/api/v3/simple/price?ids=${coin_id}&x_cg_demo_api_key=${getCoingeckoAPIkey()}&include_24hr_change=true&vs_currencies=usd`
         )
       );
     } else {
